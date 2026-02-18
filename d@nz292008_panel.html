@@ -164,47 +164,56 @@ function showBalance(phone){
     `Balance (${phone}): RM ${rm(bal)}`;
 }
 
-document.addEventListener("DOMContentLoaded", ()=>{
-
-  if(!isAdmin()){
-    lockPanel("❌ Akses ditolak. Login guna nombor admin.");
+function applyGateWithDebug(){
+  // tunggu DSGAuth ready (kadang mobile load lambat)
+  if(!window.DSGAuth || !window.DSGAuth.getSession){
+    setTimeout(applyGateWithDebug, 120);
     return;
   }
 
+  const s = window.DSGAuth.getSession();
+  const sessionPhoneRaw = s?.phone || "";
+  const sessionPhone = normalize(sessionPhoneRaw);
+
+  const adminList = ADMIN_PHONES.map(normalize);
+
+  // DEBUG supaya kita nampak apa compare sebenarnya
+  if(!sessionPhone){
+    lockPanel(`❌ Belum login.\n(session kosong)`);
+    return;
+  }
+
+  if(!adminList.includes(sessionPhone)){
+    lockPanel(
+      `❌ Akses ditolak. Login guna nombor admin.\n` +
+      `Session: ${sessionPhoneRaw} -> ${sessionPhone}\n` +
+      `AdminList: ${adminList.join(", ")}`
+    );
+    return;
+  }
+
+  // optional key
   if(ADMIN_KEY){
-    const key = prompt("Admin Key:");
-    if(key !== ADMIN_KEY){
-      document.body.innerHTML="";
-      return;
+    const ok = sessionStorage.getItem("DSG_ADMIN_KEY_OK");
+    if(!ok){
+      const key = prompt("Admin Key:");
+      if(key !== ADMIN_KEY){
+        document.body.innerHTML="";
+        return;
+      }
+      sessionStorage.setItem("DSG_ADMIN_KEY_OK","1");
     }
   }
 
   unlockPanel();
+}
 
-  document.getElementById("checkBtn").onclick=()=>{
-    const phone=normalize(phoneInput.value);
-    if(!phone) return alert("Isi phone");
-    showBalance(phone);
-  };
-
-  document.getElementById("addBtn").onclick=()=>{
-    const phone=normalize(phoneInput.value);
-    const amt=Number(amountInput.value||0);
-    if(!phone||amt<=0) return alert("Invalid");
-    window.DSGAuth.wallet.addBalance(phone,amt);
-    showBalance(phone);
-  };
-
-  document.getElementById("subBtn").onclick=()=>{
-    const phone=normalize(phoneInput.value);
-    const amt=Number(amountInput.value||0);
-    if(!phone||amt<=0) return alert("Invalid");
-    const res=window.DSGAuth.wallet.deductBalance(phone,amt);
-    if(!res.ok) return alert("Balance tak cukup");
-    showBalance(phone);
-  };
-
+document.addEventListener("DOMContentLoaded", ()=>{
+  applyGateWithDebug();
 });
+
+// kalau login/logout berubah, auto check semula
+window.addEventListener("dsg:auth-changed", applyGateWithDebug);
 
 const phoneInput=document.getElementById("phone");
 const amountInput=document.getElementById("amount");
