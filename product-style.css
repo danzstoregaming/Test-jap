@@ -1,0 +1,1050 @@
+html{
+  font-size:13px;                
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  font-family:'Rajdhani',sans-serif;
+}
+
+/* ===== Reset & base ===== */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:focus { outline: none; }
+html,body { margin:0; padding:0; font-family:'Rajdhani',sans-serif; }
+
+body {
+  background: #0a1222; /* sama seperti home */
+  color: #e6f0ff;      /* teks warna sama */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Semua kad & panel putih */
+.product-card,
+.card-section,
+.option-card,
+.pay-tile,
+.voucher-row input {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+/* Header kekal gradient */
+.flat-full-header{
+  width:100%;
+  height:64px;
+  background:linear-gradient(90deg,#060a12,#0b1222);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.header-content{
+  width:100%;
+  max-width:1200px;
+  height:64px;
+  display:grid;
+  grid-template-columns:70px 1fr 70px;
+  align-items:center;
+  padding:0 16px;
+}
+
+/* kiri rapat kiri, kanan rapat kanan */
+.header-left{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+.header-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+/* pastikan icon betul-betul hujung */
+.header-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+}
+
+.header-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+.header-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.header-title{
+  position:static;   /* penting */
+  font-family:'Orbitron',sans-serif;
+  font-weight:700;
+  font-size:1.1rem;
+  color:#fff;
+  margin:0;
+  white-space:nowrap;
+}
+
+.header-title{
+  font-family:'Orbitron',sans-serif;
+  font-weight:700;
+  font-size:1.1rem;
+  color:#fff;
+  margin:0;
+  white-space:nowrap;
+}
+
+.header-logo{
+  height:28px;          /* kecilkan sikit */
+  width:auto;
+  opacity:.9;
+}
+
+/* rapatkan logo dengan title */
+.header-center{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;              /* kecilkan gap */
+}
+
+.header-icon{
+  font-size:1.6rem;
+  color:#00e0ff;
+  text-decoration:none;
+}
+
+/* Warna teks & accent kekal dari Home */
+.option-card .item-price,
+.pay-tile i {
+  color: #00a8ff;
+}
+
+.cta {
+  background: linear-gradient(90deg, #00e5ff, #7cffb2);
+  color: #032a2f;
+}
+
+/* Page container */
+#product-page{ width:100%; max-width:1080px; padding:16px; display:flex; flex-direction:column; gap:16px; }
+
+/* ===== RGB & GOLD themes ===== */
+@keyframes rgbGlow {
+  0%{ box-shadow:0 0 18px rgba(255,45,85,.25); border-color:#ff2d55;}
+  33%{ box-shadow:0 0 18px rgba(0,229,255,.25); border-color:#00e5ff;}
+  66%{ box-shadow:0 0 18px rgba(0,255,163,.25); border-color:#00ffa3;}
+  100%{ box-shadow:0 0 18px rgba(255,45,85,.25); border-color:#ff2d55;}
+}
+@keyframes goldGlow {
+  0%{ box-shadow:0 0 20px rgba(212,175,55,.45); border-color:#d4af37;}
+  50%{ box-shadow:0 0 26px rgba(255,215,0,.6); border-color:#ffd700;}
+  100%{ box-shadow:0 0 20px rgba(212,175,55,.45); border-color:#d4af37;}
+}
+.rgb-theme{ animation: rgbGlow 6s linear infinite; }
+.gold-theme{ animation: goldGlow 4s ease-in-out infinite; }
+
+/* ===== Product info card ===== */
+.product-card{
+  display:flex; gap:16px; padding:18px;
+  background:#ffffff;
+  border:2px solid transparent; border-radius:18px;
+}
+.product-card img{
+  width:96px; height:96px; border-radius:14px; object-fit:cover; background:#eef3ff;
+}
+.info-details h2{ margin:0 0 6px; font-size:1.4rem; font-weight:900; }
+.sub-info{ margin:0 0 10px; color:#6a7280; }
+.product-tags{ list-style:none; display:grid; gap:6px; padding:0; margin:0; }
+.product-tags li{ color:#1f3b53; font-weight:800; display:flex; gap:8px; align-items:center; }
+.product-tags i{ color:#00bcd4; }
+
+/* ===== shared section card ===== */
+.card-section{
+  background: #ffffff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:18px;
+  padding:0 14px 14px;
+}
+.section-head{
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between;
+  font-weight:900; padding:12px 2px; font-size:1.2rem; border:0; background:transparent; cursor:pointer;
+}
+.title-with-num{ display:flex; align-items:center; gap:10px; }
+.badge-num{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(90deg,#00e5ff,#7cffb2); color:#032a2f; font-weight:900;
+}
+.section-head .caret{ transition: transform .25s ease; }
+
+/* Description smooth collapse */
+.desc-content{
+  overflow:hidden;
+  max-height:0; opacity:0;
+  transition: max-height .35s cubic-bezier(.25,.8,.25,1), opacity .35s ease;
+  padding:0 2px;
+}
+.card-section.open .desc-content{ padding:10px 2px 14px; max-height:260px; opacity:1; }
+
+/* Select Product grid (2 columns) */
+.select-grid{
+  display:grid; grid-template-columns: repeat(2,1fr); gap:12px;
+  padding:6px 2px 8px;
+}
+
+#select-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.select-group-title{
+  margin:6px 2px 2px;
+  font-size:0.9rem;
+  font-weight:900;
+  letter-spacing:.2px;
+  text-transform:uppercase;
+  color:#9fb6d0;
+}
+
+.group-grid{
+  margin-bottom:6px;
+}
+
+/* group-grid masih guna .select-grid sedia ada untuk 2 column layout */
+.group-grid.select-grid{
+  width:100%;
+}
+.option-card {
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 16px;
+  text-align: center;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.option-card .item-price {
+  color: #00a8ff;
+}
+.option-card:hover{ transform: translateY(-2px); }
+.option-card.selected{ border-color:#00e5ff; box-shadow:0 0 0 2px rgba(0,229,255,.25) inset; }
+.option-card img{ width:48px; height:48px; border-radius:8px; object-fit:cover; margin-bottom:6px; }
+.option-card .item-title{ font-size:.95rem; font-weight:800; }
+.option-card .item-sub{ font-size:.85rem; opacity:.8; }
+.option-card .item-price{ margin-top:4px; color:#00a8ff; font-weight:900; }
+
+/* Disabled option (for Joki Ranked Per Star display only) */
+.option-card.disabled{
+  cursor: default;
+  opacity: 0.95;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.option-card.disabled:hover{
+  transform:none !important;
+}
+
+/* ===== BUYER FIELDS ===== */
+
+#buyer-fields input,
+#buyer-fields select,
+#voucher-code,
+#buyer-phone{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(148,163,184,0.8);
+  background: radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%),
+              rgba(15,23,42,0.96);
+  color:#e6f0ff;
+  margin-bottom:10px;
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,0.9),
+    0 10px 22px rgba(0,0,0,0.7);
+}
+
+.label{
+  font-weight:800;
+  margin-bottom:6px;
+  display:block;
+  color:#1f2937;
+}
+
+/* wrapper setiap field (label + input / dropdown) */
+.buyer-field{
+  width:100%;
+  margin-bottom:12px;
+}
+
+.buyer-field:last-child{
+  margin-bottom:0;
+}
+
+/* ===== CUSTOM DROPDOWN (SEMUA DROPDOWN BUYER GUNA INI) ===== */
+
+.dsg-select{
+  position:relative;
+  width:100%;
+}
+
+.dsg-select-display{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(148,163,184,0.8);
+  background: radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%),
+              rgba(15,23,42,0.96);
+  color:#9fb6d0; /* placeholder color */
+  margin-bottom:0;
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,0.9),
+    0 10px 22px rgba(0,0,0,0.7);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:1rem;
+  font-weight:600;
+  text-align:left;
+}
+
+.dsg-select-display::after{
+  content:"▾";
+  font-size:.8rem;
+  margin-left:8px;
+  opacity:.8;
+}
+
+.dsg-select-display[data-has-value="1"]{
+  color:#e6f0ff;
+}
+
+.dsg-select-menu{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 4px);
+  background:rgba(15,23,42,0.98);
+  border-radius:12px;
+  border:1px solid rgba(148,163,184,0.9);
+  box-shadow:0 18px 32px rgba(0,0,0,0.85);
+  padding:4px 0;
+  opacity:0;
+  transform:translateY(-4px);
+  pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+  z-index:30;
+
+  /* baru: nampak 4–5 baris je, selebihnya scroll */
+  max-height:230px;
+  overflow-y:auto;
+}
+
+.dsg-select.open .dsg-select-menu{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+
+.dsg-option{
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:.95rem;
+  font-weight:600;
+  color:#e6f0ff;
+}
+
+.dsg-option:hover{
+  background:rgba(34,211,238,0.14);
+}
+
+/* hidden input utk simpan value dropdown (supaya validation & WhatsApp masih jalan) */
+.dsg-hidden-input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+  height:0;
+  margin:0;
+  padding:0;
+  border:0;
+}
+
+/* Payment tiles (gaming white-RGB) */
+.pay-wrap{ overflow:hidden; max-height:1000px; opacity:1; transition:max-height .35s ease, opacity .35s ease; }
+.card-section:not(.open) .pay-wrap{ max-height:0; opacity:0; }
+
+.pay-grid{
+  display:grid; gap:12px; grid-template-columns:repeat(2,1fr);
+  padding-bottom:8px; margin-top:6px;
+}
+.pay-tile{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:16px 10px; border-radius:14px; border:1px solid rgba(0,0,0,.1);
+  background:#ffffff; color:#0f172a; cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .2s;
+  box-shadow:0 6px 16px rgba(0,0,0,.05);
+}
+.pay-tile i{ font-size:20px; color:#00a8ff; }
+.pay-tile.selected{
+  border-color:#00e5ff; box-shadow:0 0 0 2px rgba(0,229,255,.25) inset, 0 8px 20px rgba(0,229,255,.15);
+  transform:translateY(-1px);
+}
+
+/* Voucher row */
+.voucher-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.voucher-row input {
+  flex: 1;
+  height: 48px;
+  box-sizing: border-box;
+}
+
+.use-btn {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  background: #0fd;
+  color: #033;
+  box-shadow: 0 4px 12px rgba(0,229,255,.25);
+}
+.voucher-status{ margin-top:8px; font-weight:800; }
+.voucher-status.valid{ color:#0a8f30; }
+.voucher-status.legend{ color:#c79500; }
+.voucher-status.invalid{ color:#c80f2e; }
+
+/* CTA */
+.cta{
+  width:100%; padding:14px; border:0; border-radius:14px;
+  background:linear-gradient(90deg,#00e5ff,#7cffb2);
+  color:#032a2f; font-weight:900; cursor:pointer;
+}
+.cta:active{ transform:translateY(1px); }
+
+/* Helper */
+.helper{ color:#6b7280; margin:4px 2px 8px; }
+
+/* Validation effects */
+@keyframes sectionGlow {
+  0%,100%{ box-shadow:none; }
+  50%{ box-shadow:0 0 18px rgba(255,0,80,.6); }
+}
+.error-highlight{ animation: sectionGlow 1.2s ease; }
+.input-error{ border-color:#ff0040 !important; box-shadow:0 0 8px #ff0040 !important; }
+
+/* Mobile */
+@media (min-width: 861px){
+  .select-grid{ grid-template-columns: repeat(3,1fr); }
+}
+
+/* === FONT & SECTION COLOR ADJUSTMENT (HOME-THEME MATCH) === */
+body { background:#0a1222; color:#e6f0ff; }
+.card-section, .product-card, .option-card, .pay-tile {
+  background: rgba(10,18,34,0.7);
+  color: #e6f0ff;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.section-head,
+.label,
+.helper,
+.sub-info,
+.product-tags li,
+.pay-tile span {
+  color: #e6f0ff;
+}
+#buyer-fields input::placeholder,
+#voucher-code::placeholder,
+#buyer-phone::placeholder { color:#9fb6d0; }
+
+/* ==== DSG Error Modal (Neon Glass) ==== */
+.error-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.78);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s ease;
+}
+
+.error-modal-backdrop.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.error-modal{
+  width:calc(100% - 48px);
+  max-width:360px;
+  border-radius:20px;
+  padding:18px 18px 14px;
+  text-align:center;
+  background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.9));
+  border:1px solid rgba(148, 163, 184, .6);
+  box-shadow:
+    0 18px 38px rgba(0,0,0,.8),
+    0 0 24px rgba(0,229,255,.4);
+}
+
+.error-modal-icon{
+  width:54px;
+  height:54px;
+  margin:0 auto 8px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(circle at 30% 0,#f97316,#ef4444);
+  box-shadow:0 0 22px rgba(248,113,113,.8);
+}
+
+.error-modal-icon i{
+  color:#fef2f2;
+  font-size:26px;
+}
+
+.error-modal-title{
+  margin:6px 0 4px;
+  font-family:'Orbitron',sans-serif;
+  font-size:1.1rem;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  color:#e5f2ff;
+}
+
+.error-modal-message{
+  margin:0 0 14px;
+  font-size:.95rem;
+  color:#cbd5f5;
+}
+
+.error-modal-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 22px;
+  border-radius:999px;
+  border:none;
+  font-weight:900;
+  letter-spacing:.3px;
+  cursor:pointer;
+  background:linear-gradient(90deg,#00e5ff,#7cffb2);
+  color:#032a2f;
+  box-shadow:0 8px 20px rgba(0,229,255,.35);
+}
+
+.error-modal-btn:active{
+  transform:translateY(1px);
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 40px 20px 32px;
+  color: #fff;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.footer-logo-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.footer-logo {
+  width: 130px;
+  height: auto;
+}
+
+/* Title & heading + underline ikut panjang text */
+.footer-title,
+.footer-heading {
+  display: inline-block;
+  position: relative;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+/* Underline biru sama style untuk semua */
+.footer-title::after,
+.footer-heading::after {
+  content: "";
+  display: block;
+  width: 100%;          /* ikut panjang text */
+  height: 6px;
+  background: #00AEEF;  /* biru macam butang ALL / icon rumah */
+  box-shadow: 0 0 10px #00AEEF;
+  border-radius: 999px;
+  margin: 6px auto 18px;
+}
+
+.footer-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0 0 8px;
+}
+
+.footer-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.85;
+  margin: 0 auto 32px;
+  max-width: 90%;
+}
+
+.footer-text {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.footer-social {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 24px 0 10px;
+}
+
+.social-icon {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  box-shadow: 0 0 12px rgba(0, 174, 239, 0.55);
+}
+
+.footer-copy {
+  margin-top: 14px;
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+/* Kalau masih ada .footer-underline lama, sembunyikan saja */
+.footer-underline {
+  display: none;
+}
+
+/* Extra spacing khas untuk FOLLOW US */
+.footer-follow-title {
+  margin-top: 36px !important;
+}
+
+/* Besarkan spacing antara heading & ikon */
+.footer-social {
+  margin: 32px 0 10px !important;
+}
+
+/* ===================== RANK SECTION (JOKI RANKED) ======================= */
+
+.rank-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(0, 235, 255, 0.05);
+  border: 1px solid rgba(0, 235, 255, 0.2);
+  border-radius: 12px;
+}
+
+.rank-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  color: #66e6ff;
+  margin: 15px 0 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rank-header::before,
+.rank-header::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 234, 255, 0.2), rgba(0, 234, 255, 0.8));
+  border-radius: 999px;
+}
+
+.rank-box {
+  margin-bottom: 18px;
+}
+
+.rank-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  color: #00eaff;
+  margin-bottom: 6px;
+}
+
+.rank-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 235, 255, 0.03);
+  border: 1px solid rgba(0, 235, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: 0.2s ease;
+}
+
+.rank-item:hover {
+  background: rgba(0, 235, 255, 0.1);
+}
+
+.rank-item.selected {
+  border-color: #00eaff;
+  background: rgba(0, 255, 255, 0.12);
+  box-shadow: 0 0 10px rgba(0,255,255,0.35);
+}
+
+.star-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.star-item:hover {
+  background: rgba(0, 235, 255, 0.1);
+}
+
+.star-item.selected {
+  border-color: #00eaff;
+  background: rgba(0,255,255,0.12);
+  box-shadow: 0 0 10px rgba(0,255,255,0.35);
+}
+
+.rank-result {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(0,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  text-align: center;
+  color: #00eaff;
+}
+
+/* ===== WhatsApp row ikut style voucher/buyer ===== */
+.wa-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  width:100%;
+}
+
+/* kotak kecil kiri (country) */
+select#wa-country{
+  width:92px;
+  height:50px;
+  box-sizing:border-box;
+
+  border-radius:12px;
+  background:#0f1b2a;
+  border:1px solid rgba(0,224,255,0.3);
+
+  padding:0 12px;
+  color:#ffffff;
+
+  font-size:15px;
+  font-family: inherit;
+  outline:none;
+
+  -webkit-appearance:none;
+  appearance:none;
+
+  /* icon dropdown (arrow) */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #ffffff 50%),
+    linear-gradient(135deg, #ffffff 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size:6px 6px, 6px 6px;
+  background-repeat:no-repeat;
+}
+
+/* kotak kanan (phone) — pastikan sama macam input lain */
+#buyer-phone{
+  flex:1;
+  height:50px;
+  box-sizing:border-box;
+
+  border-radius:12px;
+  background:#0f1b2a;
+  border:1px solid rgba(0,224,255,0.3);
+
+  padding:0 14px;
+  color:#ffffff;
+
+  font-size:15px;
+  font-family: inherit;
+  outline:none;
+}
+
+/* placeholder (kau dah ada rule global untuk buyer-phone placeholder color) 2 */
+#buyer-phone::placeholder{
+  font-size:15px;
+  font-family: inherit;
+}
+
+#buyer-phone,
+select#wa-country{
+  font-family: inherit;
+  font-size: 15px;
+}
+
+#buyer-phone::placeholder{
+  font-family: inherit;
+  font-size: 15px;
+  opacity: 1;
+}
+
+/* ===== WhatsApp (Section 5) match style macam section lain ===== */
+.wa-country-wrap{
+  flex: 0 0 118px; /* saiz kiri macam dropdown buyer */
+  max-width: 118px;
+}
+
+.wa-country-wrap .dsg-select-display{
+  margin-bottom: 0; /* supaya align macam voucher row */
+  padding: 12px 14px;
+}
+
+.wa-row #buyer-phone{
+  margin-bottom: 0; /* override global input spacing */
+}
+
+.wa-send-btn{
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 12px;
+}
+
+/* ===== FORCE WhatsApp row sama besar (dropdown vs phone) ===== */
+.wa-row{
+  display:flex !important;
+  gap:10px !important;
+  align-items:stretch !important;
+}
+
+.wa-row .wa-country-wrap{
+  flex:0 0 38% !important;
+}
+
+.wa-row #buyer-phone{
+  flex:1 1 auto !important;
+
+  /* kunci tinggi & spacing sama macam dropdown display */
+  height:48px !important;
+  padding:12px !important;
+  border-radius:12px !important;
+  border:1px solid rgba(148,163,184,0.8) !important;
+
+  /* paksa background + shadow sama macam .dsg-select-display */
+  background: radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%),
+              rgba(15,23,42,0.96) !important;
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,0.9),
+    0 10px 22px rgba(0,0,0,0.7) !important;
+
+  color:#e6f0ff !important;
+  font-family:inherit !important;
+  font-size:1rem !important;
+  font-weight:600 !important;
+
+  /* buang benda yang selalu buat nampak tak sama */
+  margin:0 !important;
+  outline:none !important;
+}
+
+.wa-row .dsg-select-display{
+  height:48px !important;
+  margin:0 !important;
+}
+
+#buyer-phone{
+  font-family:'Rajdhani',sans-serif !important;
+  font-size:1rem !important;
+  font-weight:600 !important;
+}
+#buyer-phone::placeholder{
+  font-family:'Rajdhani',sans-serif !important;
+  font-size:1rem !important;
+  font-weight:600 !important;
+  opacity:0.75;
+}
+
+/* ===== AUTH POPUP (Dark Neon Glass) ===== */
+
+.auth-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.78);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  backdrop-filter:blur(4px);
+}
+
+.auth-modal{
+  width:calc(100% - 48px);
+  max-width:380px;
+  border-radius:20px;
+  padding:20px;
+  background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(10,18,34,.96));
+  border:1px solid rgba(0,229,255,.35);
+  box-shadow:
+    0 20px 45px rgba(0,0,0,.85),
+    0 0 28px rgba(0,229,255,.35);
+  color:#e6f0ff;
+}
+
+.auth-modal h2{
+  font-family:'Orbitron',sans-serif;
+  margin:0 0 6px;
+  font-size:1.2rem;
+}
+
+.auth-modal p{
+  font-size:.9rem;
+  color:#9fb6d0;
+  margin-bottom:14px;
+}
+
+/* Input sama style buyer info */
+.auth-modal input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(148,163,184,.6);
+  background:
+    radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%),
+    rgba(15,23,42,0.96);
+  color:#e6f0ff;
+  margin-bottom:12px;
+  font-weight:700;
+}
+
+/* Login button neon */
+.auth-btn-primary{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:0;
+  font-weight:900;
+  cursor:pointer;
+  background:linear-gradient(90deg,#00e5ff,#7cffb2);
+  color:#032a2f;
+  box-shadow:0 8px 20px rgba(0,229,255,.35);
+}
+
+.auth-btn-secondary{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.2);
+  background:transparent;
+  color:#e6f0ff;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:8px;
+}
+
+.auth-link{
+  display:block;
+  margin-top:10px;
+  font-size:.85rem;
+  color:#00e5ff;
+  text-align:left;
+  cursor:pointer;
+}
+
+/* ===== FLOATING LOGIN BUTTON ===== */
+
+.floating-auth{
+  position:fixed;
+  bottom:18px;
+  right:18px;
+  background:rgba(15,23,42,.95);
+  border:1px solid rgba(0,229,255,.35);
+  border-radius:40px;
+  padding:6px 6px 6px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.7),
+    0 0 20px rgba(0,229,255,.2);
+}
+
+.floating-auth span{
+  font-size:.8rem;
+  color:#9fb6d0;
+}
+
+.floating-auth button{
+  border:0;
+  border-radius:30px;
+  padding:8px 18px;
+  font-weight:900;
+  cursor:pointer;
+  background:linear-gradient(90deg,#00e5ff,#7cffb2);
+  color:#032a2f;
+}

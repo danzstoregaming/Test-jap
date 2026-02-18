@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:Rajdhani, sans-serif;
+  min-height:100vh;
+  color:#e6f0ff;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(0,229,255,.20), transparent 50%),
+    radial-gradient(circle at 85% 25%, rgba(124,255,178,.14), transparent 55%),
+    linear-gradient(180deg,#0b1530,#070b14);
+  padding:20px;
+}
+
+.wrap{max-width:700px;margin:auto}
+
+.title{
+  font-family:Orbitron;
+  font-size:20px;
+  margin-bottom:15px;
+}
+
+.card{
+  background:rgba(10,18,34,.9);
+  border:1px solid rgba(0,229,255,.3);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 20px 45px rgba(0,0,0,.6);
+}
+
+label{font-size:12px;color:#9fb6d0}
+
+input{
+  width:100%;
+  padding:12px;
+  margin-top:5px;
+  margin-bottom:15px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(0,0,0,.3);
+  color:#fff;
+  font-weight:700;
+}
+
+button{
+  padding:12px;
+  border-radius:14px;
+  border:0;
+  font-weight:900;
+  cursor:pointer;
+  flex:1;
+}
+
+.btn-primary{
+  background:linear-gradient(90deg,#00e5ff,#7cffb2);
+  color:#032a2f;
+}
+
+.btn-danger{
+  background:rgba(255,77,109,.15);
+  border:1px solid rgba(255,77,109,.4);
+  color:#ffd5dd;
+}
+
+.btn-secondary{
+  background:rgba(255,255,255,.1);
+  color:#fff;
+}
+
+.row{display:flex;gap:10px;flex-wrap:wrap}
+
+.result{
+  margin-top:15px;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.15);
+  font-weight:800;
+}
+
+.lock{
+  margin-top:10px;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,77,109,.1);
+  border:1px solid rgba(255,77,109,.4);
+  display:none;
+  font-weight:800;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="title">Admin Wallet Panel</div>
+
+  <div class="card">
+    <div id="lockMsg" class="lock"></div>
+
+    <label>Phone Target</label>
+    <input id="phone" placeholder="011xxxxxxxx">
+
+    <label>Amount (RM)</label>
+    <input id="amount" placeholder="10.00">
+
+    <div class="row">
+      <button class="btn-secondary" id="checkBtn">Check</button>
+      <button class="btn-primary" id="addBtn">+ Add</button>
+      <button class="btn-danger" id="subBtn">- Sub</button>
+    </div>
+
+    <div id="result" class="result">
+      Balance: RM 0.00
+    </div>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+
+<script>
+// ======= SET ADMIN PHONE =======
+const ADMIN_PHONES = [
+  "01139337462" // GANTI DENGAN NOMBOR ADMIN KAU
+];
+
+const ADMIN_KEY = "danz2026"; // tukar kalau nak
+
+function normalize(p){
+  return window.DSGAuth?.normalizePhone(p) || String(p||"").replace(/\D/g,"");
+}
+
+function isAdmin(){
+  const s = window.DSGAuth?.getSession?.();
+  if(!s?.phone) return false;
+  return ADMIN_PHONES.map(normalize).includes(normalize(s.phone));
+}
+
+function lockPanel(msg){
+  document.getElementById("lockMsg").style.display="block";
+  document.getElementById("lockMsg").innerText=msg;
+  ["phone","amount","checkBtn","addBtn","subBtn"]
+    .forEach(id=>document.getElementById(id).disabled=true);
+}
+
+function unlockPanel(){
+  document.getElementById("lockMsg").style.display="none";
+}
+
+function rm(n){return Number(n||0).toFixed(2)}
+
+function showBalance(phone){
+  const api = window.DSGAuth?.wallet;
+  if(!api) return;
+  const bal = api.getBalance(phone);
+  document.getElementById("result").innerText =
+    `Balance (${phone}): RM ${rm(bal)}`;
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+
+  if(!isAdmin()){
+    lockPanel("❌ Akses ditolak. Login guna nombor admin.");
+    return;
+  }
+
+  if(ADMIN_KEY){
+    const key = prompt("Admin Key:");
+    if(key !== ADMIN_KEY){
+      document.body.innerHTML="";
+      return;
+    }
+  }
+
+  unlockPanel();
+
+  document.getElementById("checkBtn").onclick=()=>{
+    const phone=normalize(phoneInput.value);
+    if(!phone) return alert("Isi phone");
+    showBalance(phone);
+  };
+
+  document.getElementById("addBtn").onclick=()=>{
+    const phone=normalize(phoneInput.value);
+    const amt=Number(amountInput.value||0);
+    if(!phone||amt<=0) return alert("Invalid");
+    window.DSGAuth.wallet.addBalance(phone,amt);
+    showBalance(phone);
+  };
+
+  document.getElementById("subBtn").onclick=()=>{
+    const phone=normalize(phoneInput.value);
+    const amt=Number(amountInput.value||0);
+    if(!phone||amt<=0) return alert("Invalid");
+    const res=window.DSGAuth.wallet.deductBalance(phone,amt);
+    if(!res.ok) return alert("Balance tak cukup");
+    showBalance(phone);
+  };
+
+});
+
+const phoneInput=document.getElementById("phone");
+const amountInput=document.getElementById("amount");
+
+</script>
+</body>
+</html>

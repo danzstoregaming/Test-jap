@@ -1,0 +1,122 @@
+:root{
+  --bg:#0a1222;
+  --panel:rgba(15,23,42,.75);
+  --line:rgba(148,163,184,.35);
+  --text:#e6f0ff;
+  --muted:#9fb6d0;
+  --accent:#00e5ff;
+  --good:#00ffa3;
+  --bad:#ff2d55;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+
+.topbar{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(90deg,#060a12,#0b1222);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.topbar-inner{
+  max-width:1100px;margin:0 auto;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:50%;
+  background:radial-gradient(circle at 30% 0,rgba(0,229,255,.6),transparent 55%),rgba(255,255,255,.08);
+  border:1px solid rgba(0,229,255,.4);
+  box-shadow:0 0 18px rgba(0,229,255,.25);
+}
+.brand-name{font-family:'Orbitron',sans-serif;font-weight:700}
+.brand-sub{color:var(--muted);font-size:.9rem}
+
+.wrap{
+  max-width:1100px;margin:0 auto;padding:16px;
+  display:grid;grid-template-columns:220px 1fr;gap:14px;
+}
+.side{
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;
+  box-shadow:0 10px 22px rgba(0,0,0,.55);
+  height:fit-content;
+}
+.nav{
+  width:100%;padding:12px 12px;border-radius:12px;border:1px solid transparent;
+  background:transparent;color:var(--text);text-align:left;cursor:pointer;
+  font-weight:700;
+}
+.nav:hover{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.15)}
+.nav.active{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35)}
+.content{min-width:0}
+.view{display:none}
+.view.active{display:block}
+h2{margin:0 0 10px;font-family:'Orbitron',sans-serif;font-size:1.05rem}
+
+.cards{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;
+}
+.card,.panel{
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 10px 22px rgba(0,0,0,.55);
+}
+.card{padding:12px}
+.k{color:var(--muted);font-weight:700}
+.v{font-size:1.35rem;font-weight:900;margin-top:4px}
+
+.panel{padding:14px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.title{font-weight:900}
+.sub{color:var(--muted);font-size:.92rem}
+
+.table-wrap{position:relative}
+.table{width:100%;border-collapse:collapse;overflow:hidden}
+.table th,.table td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:700}
+.table th{color:var(--muted);text-transform:uppercase;font-size:.8rem;letter-spacing:.3px}
+.empty{display:none;color:var(--muted);padding:10px 2px}
+.notice{color:var(--muted);margin:10px 0 12px}
+
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.field span{display:block;margin:0 0 6px;font-weight:900}
+.field input,.field select{
+  width:100%;padding:12px;border-radius:12px;border:1px solid rgba(148,163,184,.6);
+  background: radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%), rgba(15,23,42,0.96);
+  color:var(--text);box-shadow:0 0 0 1px rgba(15,23,42,0.9),0 10px 22px rgba(0,0,0,0.7);
+  font-weight:700;
+}
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+.btn{
+  border:0;border-radius:12px;padding:12px 16px;cursor:pointer;
+  font-weight:900;background:linear-gradient(90deg,var(--accent),var(--good));color:#032a2f;
+  box-shadow:0 8px 20px rgba(0,229,255,.25);
+}
+.btn.small{padding:9px 12px;font-size:.92rem}
+.btn.ghost{background:transparent;border:1px solid rgba(0,229,255,.35);color:var(--text);box-shadow:none}
+.btn.danger{background:transparent;border:1px solid rgba(255,45,85,.5);color:#ffd1dc;box-shadow:none}
+.result{
+  margin-top:12px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(0,0,0,.22);font-weight:900;
+}
+.note{margin-top:8px;color:var(--muted);font-weight:700}
+
+@media (max-width: 900px){
+  .wrap{grid-template-columns:1fr}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+
+/* ===== MATCH HEADER HEIGHT WITH HOME / PRODUCT ===== */
+
+.topbar{
+  height:64px;
+  padding:0;
+  display:flex;
+  align-items:center;
+}
+
+.topbar-inner{
+  padding:0 16px;
+  height:64px;
+  display:flex;
+  align-items:center;
+}

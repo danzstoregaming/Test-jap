@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>danzstoregaming.my.id</title>
+
+  <!-- Preconnect fonts untuk kurangkan reflow -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="home.css"/>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="flat-full-header">
+  <div class="header-content">
+
+    <!-- LEFT (Dashboard) -->
+    <div class="header-left">
+      <a href="dashboard.html" class="header-icon" aria-label="Dashboard">
+        <i class="fa-solid fa-chart-line"></i>
+      </a>
+    </div>
+
+    <!-- CENTER (Logo - Title - Logo) -->
+    <div class="header-center">
+      <img src="https://i.imghippo.com/files/One7372Dp.png" class="header-logo" alt="Logo">
+      <h1 class="header-title">DanzStoreGaming</h1>
+      <img src="https://i.imghippo.com/files/One7372Dp.png" class="header-logo" alt="Logo">
+    </div>
+
+    <!-- RIGHT (Home) -->
+    <div class="header-right">
+      <a href="index.html" class="header-icon" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </div>
+
+  </div>
+</header>
+
+  <!-- QUICK BAR -->
+  <nav class="quickbar" aria-label="Kategori pantas">
+    <button class="qbtn active" data-cat="all" aria-pressed="true">All</button>
+    <button class="qbtn" data-cat="limited" aria-pressed="false">Limited Edition</button>
+    <button class="qbtn" data-cat="ml" aria-pressed="false">Mobile Legends</button>
+    <!-- <button class="qbtn" data-cat="genshin" aria-pressed="false">Genshin Impact</button> -->
+    <button class="qbtn" data-cat="topup" aria-pressed="false">Top-Up Games</button>
+    <button class="qbtn" data-cat="medsos" aria-pressed="false">Others Services</button>
+  </nav>
+
+  <!-- SEARCH BAR -->
+  <section class="search-panel" aria-label="Carian">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input id="searchInput" type="text" placeholder="Cari produk…" aria-label="Cari produk mengikut title sahaja" />
+      <button id="clearSearch" class="clear-btn" aria-label="Kosongkan carian">✕</button>
+    </div>
+    <!-- Hasil carian keluar di sini -->
+    <div id="searchResults" class="search-results" role="region" aria-live="polite"></div>
+  </section>
+
+  <main id="mainContent">
+    <section class="section section-limited">
+      <h2 class="sec-title">Limited Edition</h2>
+      <div class="grid" id="grid-limited"></div>
+    </section> 
+
+    <section class="section section-ml">
+      <h2 class="sec-title">Mobile Legends</h2>
+      <div class="grid" id="grid-ml"></div>
+    </section>
+    
+    <section class="section section-genshin">
+  <h2 class="sec-title">Genshin Impact</h2>
+  <div class="grid" id="grid-genshin"></div>
+</section>
+
+    <section class="section section-topup">
+      <h2 class="sec-title">Top-Up Games</h2>
+      <div class="grid" id="grid-topup"></div>
+    </section>
+
+    <section class="section section-medsos">
+      <h2 class="sec-title">Others Services</h2>
+      <div class="grid" id="grid-medsos"></div>
+    </section>
+  </main>
+
+  <!-- TESTIMONIAL SLIDER (Gallery) -->
+  <section class="section">
+    <h2 class="sec-title">Testimonial Gallery</h2>
+
+    <div class="tslider" id="tslider">
+      <button class="ts-arrow ts-prev" aria-label="Sebelum">❮</button>
+      <button class="ts-arrow ts-next" aria-label="Seterusnya">❯</button>
+
+      <div class="ts-viewport">
+        <div class="ts-track">
+          <!-- Feng tambah/ubah gambar di sini -->
+          <div class="ts-slide"><img src="https://i.postimg.cc/8PjLP45y/Picsart_26_01_14_13_39_15_670.jpg" alt="Testimonial 1" loading="lazy"></div>
+          <div class="ts-slide"><img src="https://i.postimg.cc/L6nj6DXr/Picsart_26_01_14_13_41_24_296.jpg" alt="Testimonial 2" loading="lazy"></div>
+          <div class="ts-slide"><img src="https://i.postimg.cc/dtLGt63P/Picsart_26_01_14_13_50_38_461.jpg" alt="Testimonial 3" loading="lazy"></div>
+          <div class="ts-slide"><img src="https://i.postimg.cc/kXBWXs4Y/Picsart_26_01_14_13_40_49_756.jpg" alt="Testimonial 4" loading="lazy"></div>
+          <div class="ts-slide"><img src="https://i.postimg.cc/02b72nQW/Picsart_26_01_14_13_37_54_502.jpg" alt="Testimonial 5" loading="lazy"></div>
+        </div>
+      </div>
+
+      <div class="ts-dots" aria-label="Navigasi slide"></div>
+    </div>
+  </section>
+
+<!-- ===== FOOTER START ===== -->
+<footer class="footer">
+
+  <div class="footer-logo-box">
+    <!-- Logo atas, tengah -->
+    <img src="https://i.postimg.cc/j5MrLsym/Picsart-25-11-20-19-50-19-025.png"
+         alt="DanzStoreGaming" class="footer-logo">
+
+    <!-- Nama brand -->
+    <h2 class="footer-title">DanzStoreGaming</h2>
+
+    <!-- Tagline -->
+    <p class="footer-subtitle">Trusted Gaming &amp; Joki Services</p>
+  </div>
+
+  <!-- Penerangan -->
+  <p class="footer-desc">
+    <strong>DanzStoreGaming</strong> ialah platform top-up game yang dipercayai oleh komuniti pemain
+    di seluruh Malaysia. Kami menawarkan servis pantas, harga berpatutan &amp; urusan selamat —
+    komited memberikan pengalaman top-up terbaik untuk para gamer tempatan 🎮✨
+  </p>
+
+  <!-- CONTACT -->
+  <h3 class="footer-heading">CONTACT US</h3>
+
+  <p class="footer-text">+601139337462</p>
+  <p class="footer-text">71700 Negeri Sembilan</p>
+  <p class="footer-text">danzstoregaming7462@gmail.com</p>
+
+  <!-- FOLLOW -->
+  <h3 class="footer-heading footer-follow-title">FOLLOW US</h3>
+
+  <div class="footer-social">
+    <a href="https://wa.me/601139337462" target="_blank" rel="noopener">
+      <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WhatsApp" class="social-icon">
+    </a>
+    <a href="https://t.me/DanzStoreGaming" target="_blank" rel="noopener">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram" class="social-icon">
+    </a>
+    <a href="https://www.tiktok.com/@danzstoregaming_" target="_blank" rel="noopener">
+      <img src="https://cdn-icons-png.flaticon.com/512/3046/3046126.png" alt="TikTok" class="social-icon">
+    </a>
+  </div>
+
+  <p class="footer-copy">© 2026 danzstoregaming.my.id. All Rights Reserved.</p>
+</footer>
+<!-- ===== FOOTER END ===== -->
+
+  <script src="auth.js" defer></script>
+  <script src="home.js" defer></script>
+</body>
+</html>

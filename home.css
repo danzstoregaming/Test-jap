@@ -1,0 +1,496 @@
+html{
+  font-size:13px;                
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:#0a1222;
+  color:#e6f0ff;
+  font-family:'Rajdhani',sans-serif;
+}
+
+/* ===== Base ===== */
+:root{ --header-h:58px; }
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#0a1222;color:#e6f0ff;font-family:'Rajdhani',sans-serif}
+.muted{color:#9fb6d0;text-align:center;padding:20px 12px 32px}
+
+.flat-full-header{
+  width:100%;
+  height:64px;
+  background:linear-gradient(90deg,#060a12,#0b1222);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.header-content{
+  width:100%;
+  max-width:1200px;
+  height:64px;
+  display:grid;
+  grid-template-columns:70px 1fr 70px;
+  align-items:center;
+  padding:0 16px;
+}
+
+/* kiri rapat kiri, kanan rapat kanan */
+.header-left{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+.header-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+/* pastikan icon betul-betul hujung */
+.header-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+}
+
+.header-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+.header-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.header-title{
+  position:static;   /* penting */
+  font-family:'Orbitron',sans-serif;
+  font-weight:700;
+  font-size:1.1rem;
+  color:#fff;
+  margin:0;
+  white-space:nowrap;
+}
+
+.header-title{
+  font-family:'Orbitron',sans-serif;
+  font-weight:700;
+  font-size:1.1rem;
+  color:#fff;
+  margin:0;
+  white-space:nowrap;
+}
+
+.header-logo{
+  height:28px;          /* kecilkan sikit */
+  width:auto;
+  opacity:.9;
+}
+
+/* rapatkan logo dengan title */
+.header-center{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;              /* kecilkan gap */
+}
+
+.header-icon{
+  font-size:1.6rem;
+  color:#00e0ff;
+  text-decoration:none;
+}
+
+/* ===== Section / Grid ===== */
+.section{max-width:1080px;margin:20px auto;padding:0 12px}
+.sec-title{font-family:'Orbitron',sans-serif;font-size:1.2rem;margin:6px 2px 12px}
+.grid{
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, 1fr); /* PHONE */
+}
+
+/* Tablet + Laptop + PC */
+@media (min-width: 768px){
+  .grid{
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* ===== Quick Bar ===== */
+.quickbar{
+  position:sticky; top:var(--header-h); z-index:90;
+  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+  padding:10px 12px; background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 18px rgba(0,0,0,.25);
+}
+.qbtn{
+  padding:8px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  color:#e6f0ff; font-weight:800; letter-spacing:.2px; cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+.qbtn:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,229,255,.25); border-color:rgba(0,229,255,.4)}
+.qbtn.active{background:linear-gradient(180deg,#00e5ff,#00b7ff); color:#06111e; border-color:transparent; box-shadow:0 10px 22px rgba(0,229,255,.35)}
+
+/* ===== Search Panel ===== */
+.search-panel{max-width:1080px;margin:16px auto 4px;padding:0 12px}
+.search-wrap{
+  position:relative; display:flex; align-items:center; gap:8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:10px 12px;
+  box-shadow:0 8px 18px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.search-wrap i{opacity:.9}
+.search-wrap input{
+  flex:1; border:none; outline:none; background:transparent; color:#e6f0ff;
+  font-size:1rem; font-weight:700;
+}
+.clear-btn{
+  border:none; background:rgba(255,255,255,.1); color:#e6f0ff; border-radius:8px;
+  width:28px;height:28px; display:grid; place-items:center; cursor:pointer;
+}
+.clear-btn:hover{background:#00e5ff;color:#06111e}
+
+/* Search Results */
+.search-results{ margin-top:10px; display:none }
+.search-results.active{ display:block }
+
+/* ===== CARD: Vertical Neon Glass ===== */
+.card{
+  --r:16px; --glass:rgba(255,255,255,.06); --stroke:rgba(255,255,255,.14);
+  position:relative; overflow:hidden; border-radius:var(--r);
+  background:linear-gradient(180deg,var(--glass),rgba(255,255,255,.02));
+  border:2px solid var(--stroke);
+  max-width:168px; margin:auto;
+  box-shadow:0 10px 22px rgba(0,0,0,.36), inset 0 0 0 2px rgba(255,255,255,.06);
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
+  /* sentiasa nampak, tiada fade-in */
+  opacity:1;
+  transform:none;
+}
+
+/* class .show masih wujud tapi tak ubah apa² – supaya JS tak rosak */
+.card.show{
+  opacity:1;
+  transform:none;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 16px 30px rgba(0,0,0,.5), 0 0 0 2px var(--edge-soft);
+  border-color:color-mix(in srgb, var(--edge-1), #fff 25%);
+  filter:saturate(1.05);
+}
+.card::before{
+  content:"";position:absolute;inset:-2px;border-radius:calc(var(--r) + 3px);
+  padding:2px;pointer-events:none;opacity:.55;
+  background:conic-gradient(from 220deg,var(--edge-1),var(--edge-2),var(--edge-3),var(--edge-1));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+.card::after{
+  content:"";position:absolute;inset:5px;border-radius:calc(var(--r) - 7px);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);
+  pointer-events:none;opacity:.8;
+}
+.card-media{position:relative;aspect-ratio:16/10;overflow:hidden;background:#0a1222}
+.card-media img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.03)}
+.card-media::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(10,18,34,.0) 40%,rgba(10,18,34,.55) 100%),
+             radial-gradient(80% 60% at 50% -20%,color-mix(in srgb,var(--edge-1),transparent 70%) 0%,transparent 70%);
+  mix-blend-mode:screen;opacity:.9;
+}
+.badge{position:absolute;top:10px;right:10px;z-index:3;padding:4px 9px;border-radius:999px;font-size:.62rem;font-weight:900;letter-spacing:.2px;color:#351f00;background:linear-gradient(135deg,#ffe59a,#f6ce6f 50%,#eab652);box-shadow:0 4px 10px rgba(212,175,55,.28);backdrop-filter:saturate(140%) blur(1.5px)}
+.meta{display:grid;gap:6px;padding:10px 10px 12px;text-align:center}
+.meta .t{font-size:1rem;font-weight:900;color:#fff;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 18px color-mix(in srgb,var(--edge-1),transparent 82%)}
+.meta .s{font-size:.95rem;font-weight:800;color:#d7e6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .v{font-size:.92rem;font-weight:900;color:#8bd8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card:focus-visible{ outline:2px solid var(--edge-1); outline-offset:2px }
+
+/* Reduce motion: matikan animasi masuk */
+@media (prefers-reduced-motion: reduce){
+  .card, .card.show{ opacity:1; transform:none; }
+}
+
+/* Theme colors */
+:root{
+  --ml-1:#00e5ff; --ml-2:#6cf3ff; --ml-3:#00b7ff; --ml-soft:rgba(0,229,255,.25);
+  --tp-1:#9b5cff; --tp-2:#d1adff; --tp-3:#7f4bff; --tp-soft:rgba(155,92,255,.22);
+  --ms-1:#00f0c8; --ms-2:#86ffe9; --ms-3:#00d7b1; --ms-soft:rgba(0,240,200,.22);
+  --lm-1:#f6ce6f; --lm-2:#ffe59a; --lm-3:#ffd98e; --lm-soft:rgba(246,206,111,.28);
+
+  /* Genshin Impact theme — Celestia Blue & Soft Gold */
+  --gi-1:#87b7ff;
+  --gi-2:#b5d4ff;
+  --gi-3:#ffe29e;
+  --gi-soft:rgba(135,183,255,.32);
+}
+.card[data-theme="ml"]{--edge-1:var(--ml-1);--edge-2:var(--ml-2);--edge-3:var(--ml-3);--edge-soft:var(--ml-soft)}
+.card[data-theme="topup"]{--edge-1:var(--tp-1);--edge-2:var(--tp-2);--edge-3:var(--tp-3);--edge-soft:var(--tp-soft)}
+.card[data-theme="medsos"]{--edge-1:var(--ms-1);--edge-2:var(--ms-2);--edge-3:var(--ms-3);--ms-soft:var(--ms-soft)}
+.card[data-theme="limited"]{--edge-1:var(--lm-1);--edge-2:var(--lm-2);--edge-3:var(--lm-3);--edge-soft:var(--lm-soft)}
+.card[data-theme="genshin"]{
+  --edge-1:var(--gi-1);
+  --edge-2:var(--gi-2);
+  --edge-3:var(--gi-3);
+  --edge-soft:var(--gi-soft);
+}
+
+/* ===== Testimonial Slider (Neon Frost) ===== */
+.tslider{
+  position:relative; max-width:1080px; margin:12px auto 36px;
+  /* Anti-pop: sorok dulu */
+  opacity:0; transform:translateY(6px);
+  transition:opacity .25s ease, transform .25s ease;
+}
+.tslider.is-ready{ opacity:1; transform:none }
+/* Pastikan track tak animate sebelum ready */
+.tslider:not(.is-ready) .ts-track{ transition:none !important }
+
+.tslider *{box-sizing:border-box}
+
+.ts-viewport{
+  overflow:hidden; border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(10px) saturate(140%);
+}
+
+.ts-track{display:flex; transition:transform .35s ease; touch-action:pan-y; will-change:transform}
+.ts-slide{flex:0 0 100%; padding:16px}
+.ts-slide img{
+  width:100%; aspect-ratio:1/1; object-fit:cover; display:block;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  background:#0b1122;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ts-slide img:hover{
+  transform:translateY(-6px) scale(1.02);
+  border-color:rgba(0,229,255,.45);
+  box-shadow:0 14px 28px rgba(0,229,255,.28);
+}
+
+/* Arrows */
+.ts-arrow{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:40px; height:40px; border-radius:999px; border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  color:#e6f0ff; font-size:18px; font-weight:900; display:grid; place-items:center;
+  box-shadow:0 6px 16px rgba(0,0,0,.35);
+  cursor:pointer; z-index:3;
+  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.ts-prev{left:8px}
+.ts-next{right:8px}
+.ts-arrow:hover{transform:translateY(-50%) scale(1.06); border-color:rgba(0,229,255,.5); box-shadow:0 10px 22px rgba(0,229,255,.28)}
+@media (max-width:520px){.ts-arrow{width:34px;height:34px;font-size:16px}}
+
+/* Dots */
+.ts-dots{display:flex; gap:8px; justify-content:center; margin-top:12px}
+.ts-dots button{
+  width:9px; height:9px; border-radius:999px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.35); transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.ts-dots button.active{
+  background:#00e5ff; transform:scale(1.2);
+  box-shadow:0 0 12px rgba(0,229,255,.55), 0 0 24px rgba(0,229,255,.35);
+}
+
+/* Responsive: 2/3 per view */
+@media (min-width:768px){ .ts-slide{flex-basis:50%} }
+@media (min-width:1024px){ .ts-slide{flex-basis:33.3333%} }
+
+/* Drag cursor hint */
+.tslider.dragging .ts-slide img{cursor:grabbing}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce){
+  .ts-track{transition:none}
+  .ts-slide img{transition:none}
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 40px 20px 32px;
+  color: #fff;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.footer-logo-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.footer-logo {
+  width: 130px;
+  height: auto;
+}
+
+/* Title & heading + underline ikut panjang text */
+.footer-title,
+.footer-heading {
+  display: inline-block;
+  position: relative;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+/* Underline biru sama style untuk semua */
+.footer-title::after,
+.footer-heading::after {
+  content: "";
+  display: block;
+  width: 100%;          /* ikut panjang text */
+  height: 6px;
+  background: #00AEEF;  /* biru macam butang ALL / icon rumah */
+  box-shadow: 0 0 10px #00AEEF;
+  border-radius: 999px;
+  margin: 6px auto 18px;
+}
+
+.footer-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0 0 8px;
+}
+
+.footer-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.85;
+  margin: 0 auto 32px;
+  max-width: 90%;
+}
+
+.footer-text {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.footer-social {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 24px 0 10px;
+}
+
+.social-icon {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  box-shadow: 0 0 12px rgba(0, 174, 239, 0.55);
+}
+
+.footer-copy {
+  margin-top: 14px;
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+/* Kalau masih ada .footer-underline lama, sembunyikan saja */
+.footer-underline {
+  display: none;
+}
+
+/* Extra spacing khas untuk FOLLOW US */
+.footer-follow-title {
+  margin-top: 36px !important;
+}
+
+/* Besarkan spacing antara heading & ikon */
+.footer-social {
+  margin: 32px 0 10px !important;
+}
+
+/* Kurangkan efek berat untuk phone (elak lag / white flash) */
+@media (max-width: 600px){
+  .ts-viewport{
+    backdrop-filter:none;
+  }
+  .card{
+    box-shadow:0 6px 14px rgba(0,0,0,.3);
+  }
+}
+
+/* MOBILE (ringankan efek tapi kekalkan corak card) */
+@media (max-width: 600px){
+  html,body{background:#0a1222!important;}
+  /* Kekalkan corak + border neon, cuma kurangkan shadow supaya ringan */
+  .card{
+    opacity:1!important;
+    transform:none!important;
+    box-shadow:0 6px 14px rgba(0,0,0,.30);
+  }
+  .ts-viewport{backdrop-filter:none!important;}
+}
+
+/* ================================
+   IMAGE-ONLY CARD (KEEP NEON)
+================================ */
+
+/* buang semua text/meta bawah */
+.card .meta,
+.card .card-body,
+.card .card-info {
+  display: none !important;
+}
+
+/* card masih ada glow / corak */
+.card::before,
+.card::after {
+  display: block !important;
+}
+
+/* gambar jadi isi penuh card */
+.card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;          /* bentuk poster */
+  overflow: hidden;
+  border-radius: 18px;
+  background: #0a1222;
+}
+
+.card-media img {
+  width: 100%;
+9  height: 100%;
+  object-fit: cover;            /* penuh */
+  display: block;
+}
+
+/* JANGAN matikan overlay glow */
+.card-media::after {
+  display: none !important;     /* hanya buang dark layer, bukan neon */
+}

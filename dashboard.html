@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DanzStoreGaming • Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="brand-name">DanzStoreGaming</div>
+          <div class="brand-sub">Dashboard</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <a class="btn ghost" href="index.html">Home</a>
+        <button class="btn" id="btn-login" type="button">Login (Phone)</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <aside class="side">
+      <button class="nav active" data-view="overview">Overview</button>
+      <button class="nav" data-view="mlbb">MLBB Calculate</button>
+      <button class="nav" data-view="region">Check Region</button>
+      <button class="nav" data-view="wallet">Wallet</button>
+    </aside>
+
+    <section class="content">
+      <!-- OVERVIEW -->
+      <section class="view active" id="view-overview">
+        <h2>Overview</h2>
+        <div class="cards">
+          <div class="card"><div class="k">Total Orders</div><div class="v" id="ov-orders">0</div></div>
+          <div class="card"><div class="k">Total Revenue</div><div class="v" id="ov-revenue">RM 0.00</div></div>
+          <div class="card"><div class="k">Pending</div><div class="v" id="ov-pending">0</div></div>
+          <div class="card"><div class="k">Completed</div><div class="v" id="ov-completed">0</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="title">Recent Orders</div>
+              <div class="sub">5 order terkini (demo localStorage).</div>
+            </div>
+            <button class="btn small ghost" id="btn-seed" type="button">Seed Demo</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Tarikh</th><th>Produk</th><th>Total</th><th>Status</th></tr>
+              </thead>
+              <tbody id="recent-body"></tbody>
+            </table>
+            <div class="empty" id="recent-empty">Belum ada order.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MLBB CALC (placeholder) -->
+      <section class="view" id="view-mlbb">
+        <h2>MLBB Calculate</h2>
+        <div class="panel">
+          <div class="title">Rangka Calculator</div>
+          <div class="sub">Nanti Danz bagitahu formula untuk: Zodiac / Legend / Winrate.</div>
+
+          <div class="notice">
+            Placeholder siap — bila Danz confirm kira apa, kita tambah 3 tab kecil:
+            <b>Zodiac</b>, <b>Legend</b>, <b>Winrate</b>.
+          </div>
+
+          <div class="grid2">
+            <label class="field">
+              <span>Mode (placeholder)</span>
+              <select id="mlbb-mode">
+                <option value="zodiac">Zodiac</option>
+                <option value="legend">Legend</option>
+                <option value="winrate">Winrate</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Input (placeholder)</span>
+              <input id="mlbb-input" placeholder="Nanti isi ikut formula..." />
+            </label>
+          </div>
+
+          <button class="btn" id="mlbb-calc" type="button">Calculate (Placeholder)</button>
+          <div class="result" id="mlbb-result">RM 0.00</div>
+        </div>
+      </section>
+
+      <!-- REGION CHECK -->
+      <section class="view" id="view-region">
+        <h2>Check Region MLBB</h2>
+        <div class="panel">
+          <div class="title">Semak format ID/Server</div>
+          <div class="sub">Ini validate format sahaja (bukan live API).</div>
+
+          <div class="grid2">
+            <label class="field">
+              <span>User ID</span>
+              <input id="ml-id" inputmode="numeric" placeholder="Contoh: 123456789" />
+            </label>
+            <label class="field">
+              <span>Server ID</span>
+              <input id="ml-server" inputmode="numeric" placeholder="Contoh: 1234" />
+            </label>
+          </div>
+
+          <button class="btn" id="btn-check" type="button">Check</button>
+          <div class="result" id="region-result">—</div>
+        </div>
+      </section>
+
+            <!-- WALLET -->
+      <section class="view" id="view-wallet">
+        <h2>Wallet</h2>
+        <div class="panel">
+          <div class="title">Balance</div>
+          <div class="sub" id="wallet-sub">Log masuk untuk tengok balance anda (ikut nombor yang didaftar sahaja).</div>
+
+          <div class="grid2">
+            <label class="field">
+              <span>No Phone (Auto)</span>
+              <input id="w-phone" placeholder="Sila login dulu..." readonly />
+            </label>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="btn-wallet-get" type="button">Refresh Balance</button>
+          </div>
+
+          <div class="result" id="wallet-result">RM 0.00</div>
+          <div class="note" id="wallet-note"></div>
+        </div>
+      </section>
+
+</section>
+  </main>
+
+  <script src="auth.js" defer></script>
+<script src="dashboard.js" defer></script>
+</body>
+</html>
