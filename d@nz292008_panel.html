@@ -95,6 +95,69 @@ button{
   display:none;
   font-weight:800;
 }
+
+/* ===== Admin Key Modal ===== */
+.keymodal{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  z-index:9999;
+}
+
+.keybox{
+  width:min(520px, 92vw);
+  border-radius:18px;
+  padding:16px;
+  background:rgba(10,20,28,.92);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 12px 40px rgba(0,0,0,.55);
+}
+
+.keytitle{
+  font-weight:900;
+  font-size:18px;
+  margin-bottom:6px;
+}
+
+.keysub{
+  opacity:.85;
+  font-weight:700;
+  font-size:13px;
+  margin-bottom:12px;
+}
+
+.keyinput{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  outline:none;
+  font-weight:800;
+}
+
+.keyrow{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+
+.keyerr{
+  margin-top:10px;
+  padding:10px;
+  border-radius:12px;
+  background:rgba(255,77,109,.12);
+  border:1px solid rgba(255,77,109,.45);
+  color:#ffd5dd;
+  font-weight:800;
+  font-size:13px;
+}
 </style>
 </head>
 <body>
@@ -104,6 +167,23 @@ button{
 
   <div class="card">
     <div id="lockMsg" class="lock"></div>
+    
+    <!-- Admin Key Modal (cantik, tak guna prompt sistem) -->
+  <div id="keyModal" class="keymodal" style="display:none;">
+    <div class="keybox">
+      <div class="keytitle">Admin Verification</div>
+      <div class="keysub">Masukkan Admin Key untuk akses panel.</div>
+
+      <input id="keyInput" class="keyinput" type="password" placeholder="Admin Key" autocomplete="off" />
+
+      <div class="keyrow">
+        <button id="keyCancel" class="btn-secondary" type="button">Cancel</button>
+        <button id="keyOk" class="btn-primary" type="button">Unlock</button>
+      </div>
+
+      <div id="keyErr" class="keyerr" style="display:none;"></div>
+    </div>
+  </div>
 
     <label>Phone Target</label>
     <input id="phone" placeholder="011xxxxxxxx">
@@ -152,6 +232,8 @@ function lockPanel(msg){
 
 function unlockPanel(){
   document.getElementById("lockMsg").style.display="none";
+  ["phone","amount","checkBtn","addBtn","subBtn"]
+    .forEach(id=>document.getElementById(id).disabled=false);
 }
 
 function rm(n){return Number(n||0).toFixed(2)}
@@ -170,6 +252,50 @@ function applyGateWithDebug(){
     setTimeout(applyGateWithDebug, 120);
     return;
   }
+  
+  function openKeyModal(){
+  const modal = document.getElementById("keyModal");
+  const input = document.getElementById("keyInput");
+  const err   = document.getElementById("keyErr");
+
+  modal.style.display = "flex";
+  err.style.display = "none";
+  err.innerText = "";
+  input.value = "";
+  setTimeout(()=>input.focus(), 50);
+
+  const close = ()=>{
+    modal.style.display = "none";
+  };
+
+  const submit = ()=>{
+    const key = String(input.value || "");
+    if(key !== ADMIN_KEY){
+      err.style.display = "block";
+      err.innerText = "❌ Admin Key salah.";
+      input.focus();
+      input.select();
+      return;
+    }
+    sessionStorage.setItem("DSG_ADMIN_KEY_OK","1");
+    close();
+    // lepas unlock key, apply gate balik supaya unlock + enable + bind actions
+    applyGateWithDebug();
+  };
+
+  document.getElementById("keyCancel").onclick = ()=>{
+    close();
+    // kekal lock kalau cancel
+    lockPanel("❌ Admin Key diperlukan untuk akses panel.");
+  };
+
+  document.getElementById("keyOk").onclick = submit;
+
+  input.onkeydown = (e)=>{
+    if(e.key === "Enter") submit();
+    if(e.key === "Escape") document.getElementById("keyCancel").click();
+  };
+}
 
   const s = window.DSGAuth.getSession();
   const sessionPhoneRaw = s?.phone || "";
@@ -194,18 +320,17 @@ function applyGateWithDebug(){
 
   // optional key
   if(ADMIN_KEY){
-    const ok = sessionStorage.getItem("DSG_ADMIN_KEY_OK");
-    if(!ok){
-      const key = prompt("Admin Key:");
-      if(key !== ADMIN_KEY){
-        document.body.innerHTML="";
-        return;
-      }
-      sessionStorage.setItem("DSG_ADMIN_KEY_OK","1");
-    }
+  const ok = sessionStorage.getItem("DSG_ADMIN_KEY_OK");
+  if(!ok){
+    // lock dulu, then minta key pakai modal cantik
+    lockPanel("🔒 Sila masukkan Admin Key untuk unlock panel.");
+    openKeyModal();
+    return; // stop sini, tunggu user masukkan key
   }
+}
 
-  unlockPanel();
+unlockPanel();
+initActions();
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -217,6 +342,36 @@ window.addEventListener("dsg:auth-changed", applyGateWithDebug);
 
 const phoneInput=document.getElementById("phone");
 const amountInput=document.getElementById("amount");
+
+let ACTIONS_BOUND = false;
+
+function initActions(){
+  if(ACTIONS_BOUND) return;
+  ACTIONS_BOUND = true;
+
+  document.getElementById("checkBtn").onclick = ()=>{
+    const phone = normalize(phoneInput.value);
+    if(!phone) return alert("Isi phone");
+    showBalance(phone);
+  };
+
+  document.getElementById("addBtn").onclick = ()=>{
+    const phone = normalize(phoneInput.value);
+    const amt  = Number(amountInput.value || 0);
+    if(!phone || amt<=0) return alert("Invalid");
+    window.DSGAuth.wallet.addBalance(phone, amt);
+    showBalance(phone);
+  };
+
+  document.getElementById("subBtn").onclick = ()=>{
+    const phone = normalize(phoneInput.value);
+    const amt  = Number(amountInput.value || 0);
+    if(!phone || amt<=0) return alert("Invalid");
+    const res = window.DSGAuth.wallet.deductBalance(phone, amt);
+    if(!res.ok) return alert("Balance tak cukup");
+    showBalance(phone);
+  };
+}
 
 </script>
 </body>
