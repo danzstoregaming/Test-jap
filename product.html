@@ -181,6 +181,29 @@
 
     </div>
 
+<!-- Extra fields: only for Touch 'N Go Pin -->
+<div id="tng-pin-fields" style="display:none; margin-top:14px;">
+  <div style="display:flex; gap:12px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:140px;">
+      <label for="tngPinAmount" style="display:block; margin-bottom:6px; opacity:.9;">
+        Harga Pin (RM)
+      </label>
+      <input id="tngPinAmount" type="number" step="0.01" inputmode="decimal" placeholder="Contoh: 10.00" />
+    </div>
+
+    <div style="flex:1; min-width:160px;">
+      <label for="tngPinCode" style="display:block; margin-bottom:6px; opacity:.9;">
+        TNG Pin
+      </label>
+      <input id="tngPinCode" type="text" inputmode="numeric" placeholder="Contoh: 1234 5678 90" />
+    </div>
+  </div>
+
+  <div style="margin-top:8px; font-size:12px; opacity:.8;">
+    *Isi ikut jumlah pin & kod pin yang anda beli.
+  </div>
+</div>
+
     <input type="hidden" id="payment-selected" />
   </div>
 </section>
@@ -200,43 +223,24 @@
     <div id="voucher-status" class="voucher-status"></div>
   </section>
 
-  <!-- [7] (5) WhatsApp -->
-  <section id="whatsapp-section" class="card-section">
+<!-- [7] (5) WhatsApp -->
+  <section id="step5" class="card-section">
     <div class="section-head">
       <div class="title-with-num">
         <span class="badge-num">5</span><span>Confirm Order via WhatsApp</span>
       </div>
     </div>
-    <p class="helper">Isi nombor WhatsApp untuk dihubungi.</p>
-<label class="label">Nombor WhatsApp Anda</label>
 
-<div class="wa-row">
-  <!-- Country dropdown (same style macam Buyer Information) -->
-  <div class="dsg-select wa-country-wrap" id="wa-country-wrap">
-    <div class="dsg-select-display" data-has-value="1">🇲🇾 +60</div>
-    <div class="dsg-select-menu" role="listbox" aria-label="WhatsApp Country">
-      <div class="dsg-option" data-value="MY" data-label="🇲🇾 +60">🇲🇾 +60</div>
-      <div class="dsg-option" data-value="ID" data-label="🇮🇩 +62">🇮🇩 +62</div>
-      <div class="dsg-option" data-value="BN" data-label="🇧🇳 +673">🇧🇳 +673</div>
+    <p class="helper">
+      Klik butang bawah untuk hantar order ke WhatsApp (guna nombor yang anda login).
+    </p>
+
+    <div class="btn-row">
+      <button class="btn-primary full" id="confirmOrderBtn" type="button">
+        Hantar Order ke WhatsApp
+      </button>
     </div>
-    <input type="text" id="wa-country" class="dsg-hidden-input" value="MY" readonly />
-  </div>
-
-  <!-- Phone input (same look macam voucher / buyer input) -->
-  <input
-    type="tel"
-    id="buyer-phone"
-    inputmode="numeric"
-    pattern="[0-9]*"
-    autocomplete="tel"
-    placeholder="Contoh: 1139337462"
-  />
-</div>
-
-<button id="confirmOrderBtn" class="use-btn wa-send-btn" type="button">
-  Hantar Order ke WhatsApp
-</button>
-</section>
+  </section>
 </main>
 
 <!-- ==== Custom Error Modal DSG ==== -->

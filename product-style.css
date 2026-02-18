@@ -1048,3 +1048,23 @@ select#wa-country{
   background:linear-gradient(90deg,#00e5ff,#7cffb2);
   color:#032a2f;
 }
+
+.btn-primary {
+  background: linear-gradient(90deg, #00e0b8, #00bfff);
+  border: none;
+  color: #001b2e;
+  font-weight: 700;
+  padding: 14px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  opacity: 0.9;
+}
+
+.full {
+  width: 100%;
+}

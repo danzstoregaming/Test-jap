@@ -9,7 +9,86 @@
   const LS_SESSION = "DSG_AUTH";
   const USER_KEY_PREFIX = "DSG_USER_";
 
-  // ===== OTP (DEMO / local-only) =====
+  const LS_COUNTRY = "DSG_COUNTRY";
+
+  const COUNTRIES = [
+    { code: "MY", dial: "60", flag: "🇲🇾", label: "Malaysia" },
+    { code: "SG", dial: "65", flag: "🇸🇬", label: "Singapore" },
+    { code: "ID", dial: "62", flag: "🇮🇩", label: "Indonesia" },
+  ];
+
+  function getCountry() {
+    try {
+      const raw = localStorage.getItem(LS_COUNTRY);
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && c.code && c.dial) return c;
+      }
+    } catch {}
+    return COUNTRIES[0];
+  }
+
+  function setCountry(code) {
+    const c = COUNTRIES.find(x => x.code === code) || COUNTRIES[0];
+    try { localStorage.setItem(LS_COUNTRY, JSON.stringify(c)); } catch {}
+    return c;
+  }
+  function countryLabel(c) {
+    return `${c.flag} +${c.dial}`;
+  }
+
+  function applyCountryUI(root) {
+    const c = getCountry();
+    const btns = root.querySelectorAll("[data-country-btn]");
+    btns.forEach((b) => (b.textContent = countryLabel(c)));
+
+    // phone placeholder depends on country
+    const ph = c.code === "MY" ? "contoh: 6011xxxxxxx / 01xxxxxxxx" : `contoh: +${c.dial}xxxxxxxxxx`;
+    ["dsg-login-phone", "dsg-reg-phone", "dsg-forgot-phone"].forEach((id) => {
+      const el = root.querySelector("#" + id);
+      if (el && !el.dataset.userTouched) el.placeholder = ph;
+    });
+  }
+
+  function initCountryPicker(root) {
+    applyCountryUI(root);
+
+    root.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-country-btn]");
+      if (btn) {
+        const wrap = btn.closest(".dsg-auth-phonewrap");
+        if (wrap) wrap.classList.toggle("open");
+        e.preventDefault();
+        return;
+      }
+
+      const item = e.target.closest("[data-country]");
+      if (item) {
+        const code = item.getAttribute("data-country");
+        setCountry(code);
+        applyCountryUI(root);
+
+        // close all menus
+        root.querySelectorAll(".dsg-auth-phonewrap.open").forEach((w) => w.classList.remove("open"));
+        e.preventDefault();
+        return;
+      }
+
+      // click outside closes
+      if (!e.target.closest(".dsg-auth-phonewrap")) {
+        root.querySelectorAll(".dsg-auth-phonewrap.open").forEach((w) => w.classList.remove("open"));
+      }
+    });
+
+    // mark touched so placeholder won't overwrite when switching
+    root.querySelectorAll("input[inputmode='tel']").forEach((inp) => {
+      inp.addEventListener("input", () => (inp.dataset.userTouched = "1"), { once: true });
+    });
+  }
+
+
+
+// ===== OTP (DEMO / local-only) =====
   const OTP_PREFIX = "DSG_OTP_";         // DSG_OTP_<purpose>_<phone>
   const OTP_TTL_MS = 5 * 60 * 1000;      // 5 min
   const OTP_RESEND_MS = 30 * 1000;       // 30 sec throttle
@@ -24,7 +103,23 @@
   }
 
   function normalizePhone(raw) {
-    return normalizeDigitsLocalMY(raw);
+    const c = getCountry();
+    if (c.code === "MY") return normalizeDigitsLocalMY(raw);
+    // For non-MY: store as international digits without '+' (e.g. 6591234567)
+    const d = String(raw || "").replace(/\D/g, "");
+    if (!d) return "";
+
+    // If already starts with country dial code, keep it.
+    if (d.startsWith(c.dial)) return d;
+
+    // If user typed 00<dial>..., convert to <dial>...
+    if (d.startsWith("00" + c.dial)) return d.slice(2);
+
+    // If user typed leading 0 (local style), drop it and prefix dial.
+    if (d.startsWith("0")) return c.dial + d.slice(1);
+
+    // Fallback: assume they typed local digits without 0.
+    return c.dial + d;
   }
 
   function isValidPin(pin) {
@@ -404,7 +499,51 @@
       font-weight:1000;
     }
     .dsg-auth-mini button:active{ transform:scale(.98); }
-  `;
+  
+    /* Country picker (Region) */
+    .dsg-auth-phonewrap{ position:relative; display:flex; gap:10px; align-items:center; width:100%; }
+    .dsg-auth-phonewrap input{ flex:1; min-width:0; }
+    .dsg-country-btn{
+      flex:0 0 auto;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--dsg-border);
+      background:rgba(0,0,0,.28);
+      color:var(--dsg-text);
+      font-weight:900;
+      letter-spacing:.2px;
+      cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .dsg-country-btn:active{ transform:scale(.98); }
+    .dsg-country-menu{
+      position:absolute;
+      top:100%;
+      left:0;
+      margin-top:10px;
+      width:min(320px, 100%);
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(8,12,20,.98);
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+      display:none;
+      z-index:99999;
+      backdrop-filter: blur(12px);
+    }
+    .dsg-auth-phonewrap.open .dsg-country-menu{ display:block; }
+    .dsg-country-item{
+      width:100%;
+      text-align:left;
+      padding:12px 14px;
+      border:0;
+      background:transparent;
+      color:var(--dsg-text);
+      font-weight:800;
+      cursor:pointer;
+    }
+    .dsg-country-item:hover{ background:rgba(0,229,255,.08); }
+`;
   document.head.appendChild(st);
 }
 
@@ -438,7 +577,15 @@
         <div id="dsg-auth-form-login">
           <div class="dsg-auth-row">
             <label>No Phone</label>
-            <input id="dsg-login-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            <div class="dsg-auth-phonewrap">
+              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+              <div class="dsg-country-menu" data-country-menu>
+                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+              </div>
+              <input id="dsg-login-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            </div>
           </div>
           <div class="dsg-auth-row">
             <label>6-digit PIN</label>
@@ -455,7 +602,15 @@
         <div id="dsg-auth-form-register" style="display:none">
           <div class="dsg-auth-row">
             <label>No Phone</label>
-            <input id="dsg-reg-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            <div class="dsg-auth-phonewrap">
+              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+              <div class="dsg-country-menu" data-country-menu>
+                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+              </div>
+              <input id="dsg-reg-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            </div>
           </div>
 
           <div class="dsg-auth-row" id="dsg-reg-otp-row" style="display:none">
@@ -483,7 +638,15 @@
         <div id="dsg-auth-form-forgot" style="display:none">
           <div class="dsg-auth-row">
             <label>No Phone</label>
-            <input id="dsg-forgot-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            <div class="dsg-auth-phonewrap">
+              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+              <div class="dsg-country-menu" data-country-menu>
+                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+              </div>
+              <input id="dsg-forgot-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            </div>
           </div>
 
           <div class="dsg-auth-row" id="dsg-forgot-otp-row" style="display:none">
@@ -512,6 +675,9 @@
     `;
 
     document.body.appendChild(backdrop);
+    // Region / country selector
+    initCountryPicker(backdrop);
+
 
     const $ = (id) => document.getElementById(id);
 
@@ -729,6 +895,8 @@
 
     // penting: dashboard.js panggil normalizePhone (kalau tak ada, boleh crash)
     normalizePhone,
+    getCountry,
+    setCountry,
 
     wallet: {
       ensureWallet,

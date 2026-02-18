@@ -26,6 +26,41 @@ function formatMoney(n){
   return `${CURRENCY} ${Number(n||0).toFixed(2)}`;
 }
 
+// ===== WALLET PAYMENT LOGIC =====
+function processWalletPayment(price){
+  const session = window.DSGAuth?.getSession?.();
+  if(!session?.phone){
+    alert("Sila login dahulu.");
+    return { success:false };
+  }
+
+  const phone = session.phone;
+  const balance = getWallet(phone);
+
+  if(balance < price){
+    alert("❌ Baki Wallet tidak mencukupi.");
+    return { success:false };
+  }
+
+  const newBalance = balance - price;
+  setWallet(phone, newBalance);
+
+  window.dispatchEvent(new Event("dsg:wallet-changed"));
+
+  return {
+    success: true,
+    paid: price,
+    remaining: newBalance
+  };
+}
+
+function buildWalletReceipt(price, remaining){
+  return `
+${WALLET_NAME} : ${formatMoney(price)} ✅
+Balance : ${formatMoney(remaining)}
+`;
+}
+
 // Update the Wallet label in Payment Method card (small text)
 function updateWalletMini(){
   const el = document.getElementById("wallet-mini");
@@ -48,13 +83,6 @@ function updateWalletMini(){
   const bal = getWallet(phone);
   el.textContent = `(${formatMoney(bal)})`;
 }
-
-// keep wallet mini synced
-document.addEventListener("DOMContentLoaded", ()=>{
-  updateWalletMini();
-  window.addEventListener("dsg:auth-changed", updateWalletMini);
-  window.addEventListener("dsg:wallet-changed", updateWalletMini);
-});
 
 // ===== PHONE NORMALIZER (BY COUNTRY) =====
 function getSelectedCountry(){
@@ -150,6 +178,12 @@ if (window.appliedVoucher) {
   // ===== Helpers =====
   const qs  = (s)=> document.querySelector(s);
   const qsa = (s)=> document.querySelectorAll(s);
+
+  // sync wallet mini (show balance in payment tile)
+  updateWalletMini();
+  window.addEventListener("dsg:auth-changed", updateWalletMini);
+  window.addEventListener("dsg:wallet-changed", updateWalletMini);
+
   const el  = (tag, attrs={}, text)=>{
     const n=document.createElement(tag);
     Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));
@@ -1943,13 +1977,31 @@ else if (lbl === "Cinama") {
   }
 
   // ===== Payment Method =====
-  qsa(".pay-tile").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      qsa(".pay-tile").forEach(x=>x.classList.remove("selected"));
-      btn.classList.add("selected");
-      qs("#payment-selected").value = btn.dataset.value;
-    });
+const tngPinFields = qs("#tng-pin-fields");
+const amtEl = document.getElementById("tngPinAmount");
+const pinEl = document.getElementById("tngPinCode");
+
+const tngPinAmount = (amtEl?.value || "").trim();
+const tngPinCode   = (pinEl?.value || "").trim();
+
+qsa(".pay-tile").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    qsa(".pay-tile").forEach(x=>x.classList.remove("selected"));
+    btn.classList.add("selected");
+    qs("#payment-selected").value = btn.dataset.value;
+
+    // Show/hide extra fields for Touch 'N Go Pin
+    if (tngPinFields) {
+      const isTngPin = btn.dataset.value === "Touch 'N Go Pin";
+      tngPinFields.style.display = (isTngPin ? "block" : "none");
+
+      if (!isTngPin) {
+        if (tngPinAmountInput) tngPinAmountInput.value = "";
+        if (tngPinCodeInput) tngPinCodeInput.value = "";
+      }
+    }
   });
+});
 
   // ===== Voucher Use =====
 // ===== VOUCHER SYSTEM (MUDAH & SELAMAT) =====
@@ -2116,16 +2168,27 @@ if (firstMissing) {
       return;
     }
 
-    // 4) NOMBOR WHATSAPP
-    const country = (document.getElementById("wa-country")?.value || "MY");
-const rawBuyer = (qs("#buyer-phone")?.value || "").trim();
-const buyerLocal = normalizeLocalPhone(rawBuyer, country);
-const buyerWa = toWhatsAppInternational(buyerLocal, country);
+    // 4) WHATSAPP BUYER (guna nombor yang anda login)
+    const sess = window.DSGAuth?.getSession?.() || {};
+    const rawBuyer = String(sess.phone || "").trim();
+    if (!rawBuyer) {
+      showError("Sila login dulu untuk hantar order.", qs("#confirmOrderBtn"));
+      window.DSGAuth?.openModal?.();
+      return;
+    }
 
-// ini yang masuk dalam message "Buyer:"
-const buyerPhone = buyerWa;
+    // Region/country diambil dari login (DSGAuth.getCountry / localStorage)
+    const country = (window.DSGAuth?.getCountry?.() || { code: "MY" }).code;
+    const buyerLocal = normalizeLocalPhone(rawBuyer, country);
+    if (!buyerLocal) {
+      showError("Nombor login tak sah. Sila login semula.", confirmBtn);
+      window.DSGAuth?.openModal?.();
+      return;
+    }
+    const buyerWa = toWhatsAppInternational(buyerLocal, country);
+    const buyerPhone = buyerWa;
 
-    // 5) Kumpul Buyer Information (yang diisi sahaja)
+// 5) Kumpul Buyer Information (yang diisi sahaja)
     let buyerInfoLines = "";
     qsa("#buyer-fields input, #buyer-fields select").forEach(input => {
       const style = getComputedStyle(input);
@@ -2244,24 +2307,68 @@ if (window.appliedVoucher) {
     })();
 
     // 10) Susun mesej WhatsApp
-const message =
-`🧾 *Order Baru — DanzStoreGaming.My.Id*
+    // ===== PAYMENT + WHATSAPP MESSAGE (DSG) =====
+    const moneyRM = (n)=> `RM ${Number(n||0).toFixed(2)}`;
 
-👤 *Buyer:* ${buyerPhone}
+    // 10) Payment section ikut rules Danz
+    let paymentLines = "";
+    let walletReceipt = "";
+    if (payment === "Wallet") {
+      // auto-deduct bila cukup, kalau tak cukup: STOP
+      const wp = processWalletPayment(total);
+      if (!wp.success) return;
 
-🎮 *Product:* ${nama}
-📦 *Info:* ${region}
-🔐 *Via:* ${via}
+      // resit wallet (MYR sementara)
+      walletReceipt = buildWalletReceipt(wp.paid, wp.remaining).trim();
 
-${itemLine}${rankSummary}
-💳 *Payment:* ${payment}
-🎟️ *Voucher:* ${voucherText}
-💰 *Total:* RM ${total.toFixed(2)}
+      paymentLines = walletReceipt;
+    } else if (payment === "Touch 'N Go Pin") {
+      const pinAmountRaw = (qs("#tngPinAmount")?.value || "").trim();
+      const pinCodeRaw   = (qs("#tngPinCode")?.value || "").trim();
 
-📝 *Buyer Info:*
-${buyerInfoLines}
+      if (!pinAmountRaw) { showError("Sila isi: Harga Pin (RM)", qs("#tngPinAmount")); return; }
+      if (!pinCodeRaw)   { showError("Sila isi: TNG Pin", qs("#tngPinCode")); return; }
 
-🙏 Terima kasih! Danz akan reply secepat mungkin.`;
+      const pinAmount = Number(pinAmountRaw);
+      if (!Number.isFinite(pinAmount) || pinAmount <= 0) { showError("Harga Pin tak sah.", qs("#tngPinAmount")); return; }
+
+      paymentLines =
+`Harga Pin : ${moneyRM(pinAmount)}⭕
+TNG Pin : ${pinCodeRaw}`;
+    } else {
+      // payment lain: show semua method + ❎ (ikut contoh)
+      paymentLines =
+`Qr Pay : ${moneyRM(total)}❎
+ShopeePay : ${moneyRM(total)}❎
+Touch N' Go : ${moneyRM(total)}❎`;
+    }
+
+    // 11) Item name untuk resit
+    const selectedItemName = isJokiRankedNow ? "Joki Ranked (Per Star)" : (selected?.dataset?.name || "-");
+
+    // 12) Susun WhatsApp form baru (kemas)
+    const voucherLine = window.appliedVoucher
+      ? ("🎟️ *Voucher:* " + String(window.appliedVoucher.code || "").trim() + " (" + String(window.appliedVoucher.text || "").trim() + ")\n")
+      : "";
+
+    const rankBlock = rankSummary ? ("\n" + rankSummary + "\n") : "";
+    const buyerBlock = buyerInfoLines ? buyerInfoLines : "• -\n";
+
+    const message =
+`🧾 *ORDER RECEIPT*
+
+📦 *Product:* ${nama} (${region} • ${via})
+${itemLine}${rankBlock}👤 *Buyer Info:*
+${buyerBlock}${voucherLine}💳 *Payment*
+${paymentLines}
+
+💰 *Total:* ${moneyRM(total)}
+
+✅ Sila semak & confirm order ini.`;
+
+    // 13) Redirect WhatsApp admin
+    const admin = "601139337462";
+    window.open(`https://wa.me/${admin}?text=${encodeURIComponent(message)}`, "_blank");
 
 // ===== OVERRIDE TOTAL UNTUK CINEMAS =====
 if (isCinemasPage(nama)) {
@@ -2273,13 +2380,6 @@ if (isCinemasPage(nama)) {
 
   totalPrice = c.total; // 🔥 INI PENTING
 }
-
-    // 11) Redirect ke WhatsApp admin
-    const admin = "601139337462";
-    window.open(
-      `https://wa.me/${admin}?text=${encodeURIComponent(message)}`,
-      "_blank"
-    );
   }); // tutup klik confirmOrderBtn
 
   // ===== RUN BUYER RENDER + CUSTOM DROPDOWN INIT =====
