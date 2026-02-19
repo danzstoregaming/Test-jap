@@ -912,6 +912,35 @@
       isOtpVerified,
     },
   };
+  // ===== Firebase (optional) =====
+  // Firebase scripts + window.DSG_FIREBASE_CONFIG are injected in product.html/dashboard.html.
+  // If scripts/config are missing, website will continue using localStorage-only mode.
+  (function initFirebase(){
+    try{
+      if(!window.DSG_FIREBASE_CONFIG) {
+        window.DSGFirebase = { enabled:false, reason:"no_config" };
+        return;
+      }
+      if(!(window.firebase && firebase.initializeApp)) {
+        window.DSGFirebase = { enabled:false, reason:"sdk_missing" };
+        return;
+      }
+      // prevent double init
+      if (!firebase.apps || firebase.apps.length === 0) {
+        firebase.initializeApp(window.DSG_FIREBASE_CONFIG);
+      }
+      const db = firebase.firestore();
+      window.DSGFirebase = {
+        enabled: true,
+        db,
+        serverTimestamp: () => firebase.firestore.FieldValue.serverTimestamp(),
+      };
+    }catch(err){
+      console.warn("Firebase init failed:", err);
+      window.DSGFirebase = { enabled:false, reason:"init_failed" };
+    }
+  })();
+
 
   document.addEventListener("DOMContentLoaded", () => {
     ensureMiniChip();

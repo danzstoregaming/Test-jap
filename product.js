@@ -170,6 +170,35 @@ New: ${formatMoney(newBal)}`
   );
 };
 
+
+// ===== FIRESTORE: SAVE ORDER (optional) =====
+// Requires Firebase compat SDK + auth.js init (window.DSGFirebase)
+async function DSG_saveOrderToFirestore(orderData){
+  try{
+    const fb = window.DSGFirebase;
+    if(!fb?.enabled || !fb.db){
+      return null; // Firestore not enabled
+    }
+    const docRef = await fb.db.collection("orders").add({
+      ...orderData,
+      createdAt: fb.serverTimestamp ? fb.serverTimestamp() : new Date()
+    });
+    return docRef.id;
+  }catch(err){
+    console.warn("Save order failed:", err);
+    return null;
+  }
+}
+function DSG_makeOrderRef(docId){
+  if(!docId) return "";
+  return "DSG-" + String(docId).slice(0,8).toUpperCase();
+}
+function DSG_fmtDateTime(){
+  const d = new Date();
+  const pad = (n)=> String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => { // ===== Voucher text (SAFE) =====
 let voucherText = "Tiada";
 if (window.appliedVoucher) {
@@ -2087,7 +2116,7 @@ qs("#use-voucher").addEventListener("click", () => {
   }
 
   // ===== WhatsApp Submit =====
-  qs("#confirmOrderBtn").addEventListener("click", () => {
+  qs("#confirmOrderBtn").addEventListener("click", async () => {
     // buang highlight lama
     qsa(".input-error").forEach(e => e.classList.remove("input-error"));
 
@@ -2354,15 +2383,59 @@ Touch N' Go : ${moneyRM(total)}❎`;
     const rankBlock = rankSummary ? ("\n" + rankSummary + "\n") : "";
     const buyerBlock = buyerInfoLines ? buyerInfoLines : "• -\n";
 
+    const orderTime = DSG_fmtDateTime();
+
+    // 10) Siapkan data untuk simpan (Firestore)
+    const orderData = {
+      product: { name: nama, details: region, via },
+      item: isJokiRankedNow
+        ? { name: "Rank Booster", qty: (rankData?.totalStars || 0), price: total }
+        : { qty: selected?.dataset?.qty || "", name: selected?.dataset?.name || "", price: Number(selected?.dataset?.price || 0) },
+      buyer: { phone: buyerPhone, infoText: buyerInfoLines.trim() },
+      voucher: window.appliedVoucher ? { code: window.appliedVoucher.code || "", text: window.appliedVoucher.text || "" } : { code:"", text:"Tiada" },
+      payment: { method: payment, lines: paymentLines.trim() },
+      total: Number(total || 0),
+      status: (payment === "Wallet") ? "Paid (Wallet Deducted)" : "Pending"
+    };
+
+    // simpan & dapatkan Order ID (Firestore doc id)
+    const docId = await DSG_saveOrderToFirestore(orderData);
+    const orderRef = docId ? DSG_makeOrderRef(docId) : "";
+    const orderRefLine = docId ? `🆔 *Order Ref:* ${orderRef}\n🧾 *Order ID:* ${docId}\n` : "";
+
+    // 10) Susun mesej WhatsApp (lebih kemas & detail)
     const message =
-`🧾 *ORDER RECEIPT*
+`🧾 *DANZSTOREGAMING — ORDER*
 
-📦 *Product:* ${nama} (${region} • ${via})
-${itemLine}${rankBlock}👤 *Buyer Info:*
-${buyerBlock}${voucherLine}💳 *Payment*
-${paymentLines}
+━━━━━━━━━━━━━━━━━━━
+${orderRefLine}🕒 *Date/Time:* ${orderTime}
 
-💰 *Total:* ${moneyRM(total)}
+━━━━━━━━━━━━━━━━━━━
+📦 *PRODUCT DETAILS*
+• Product : ${nama}
+• Details : ${region}
+• Via : ${via}
+${isJokiRankedNow ? rankSummary : `• Item : ${selected.dataset.qty} ${selected.dataset.name}\n• Harga Item : ${moneyRM(Number(selected.dataset.price||0))}`}
+
+━━━━━━━━━━━━━━━━━━━
+👤 *BUYER INFORMATION*
+${buyerBlock.trim() || "• -"}
+
+━━━━━━━━━━━━━━━━━━━
+🎟️ *VOUCHER*
+${window.appliedVoucher ? voucherLine.replace(/\n$/,"") : "• Code : Tiada"}
+
+━━━━━━━━━━━━━━━━━━━
+💰 *PAYMENT SUMMARY*
+• Total : ${moneyRM(total)}
+
+━━━━━━━━━━━━━━━━━━━
+💳 *PAYMENT METHOD*
+${paymentLines.trim() || `• Method : ${payment}`}
+
+━━━━━━━━━━━━━━━━━━━
+📌 *STATUS*
+• Order Status : ${(payment === "Wallet") ? "Paid (Wallet Deducted)" : "Pending Confirmation"}
 
 ✅ Sila semak & confirm order ini.`;
 
