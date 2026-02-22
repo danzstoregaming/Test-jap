@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 
   <link rel="stylesheet" href="dashboard.css" />
 </head>
@@ -15,92 +16,204 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="logo"></div>
-        <div>
-          <div class="brand-name">DanzStoreGaming</div>
-          <div class="brand-sub">Dashboard</div>
-        </div>
-      </div>
+  <!-- guna logo sama macam Home -->
+  <img
+    class="logo-img"
+    src="https://i.imghippo.com/files/One7372Dp.png"
+    alt="DanzStoreGaming Logo"
+    loading="lazy"
+  />
+  <div>
+    <div class="brand-name">DanzStoreGaming</div>
+    <div class="brand-sub">Dashboard</div>
+  </div>
+</div>
 
-      <div class="top-actions">
-        <a class="btn ghost" href="index.html">Home</a>
-        <button class="btn" id="btn-login" type="button">Login (Phone)</button>
-      </div>
+<div class="header-right">
+      <a href="index.html" class="header-icon" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </div>
     </div>
   </header>
 
   <main class="wrap">
     <aside class="side">
-      <button class="nav active" data-view="overview">Overview</button>
-      <button class="nav" data-view="mlbb">MLBB Calculate</button>
-      <button class="nav" data-view="region">Check Region</button>
-      <button class="nav" data-view="wallet">Wallet</button>
-    </aside>
+  <button class="nav active" data-view="account">Account</button>
+  <button class="nav" data-view="wallet">Wallet D-Vantage</button>
+  <button class="nav" data-view="history">Transaction History</button>
+  <button class="nav" data-view="mlbb">Calculated MLBB</button>
+  <button class="nav" data-view="auth">Register/Log-In</button>
+  <button class="nav" data-view="help">Help/Customer Service</button>
+</aside>
 
     <section class="content">
-      <!-- OVERVIEW -->
-      <section class="view active" id="view-overview">
-        <h2>Overview</h2>
-        <div class="cards">
-          <div class="card"><div class="k">Total Orders</div><div class="v" id="ov-orders">0</div></div>
-          <div class="card"><div class="k">Total Revenue</div><div class="v" id="ov-revenue">RM 0.00</div></div>
-          <div class="card"><div class="k">Pending</div><div class="v" id="ov-pending">0</div></div>
-          <div class="card"><div class="k">Completed</div><div class="v" id="ov-completed">0</div></div>
+
+  <!-- ACCOUNT -->
+  <section class="view active" id="view-account">
+    <h2>Account</h2>
+    <div class="panel">
+      <div class="title">User Account</div>
+      <div class="sub" id="acc-sub">Account Details</div>
+
+      <div style="margin-top:12px; display:grid; gap:12px">
+        <label class="field">
+          <span>Nama</span>
+          <input id="acc-name" placeholder="Contoh:" />
+        </label>
+
+        <label class="field">
+          <span>E-mail</span>
+          <input id="acc-email" placeholder="Contoh:" />
+        </label>
+
+        <label class="field">
+          <span>No-Phone</span>
+          <input id="acc-phone" readonly placeholder="-" />
+        </label>
+
+        <label class="field">
+          <span>No-Pin</span>
+          <input id="acc-pin" readonly placeholder="******" />
+        </label>
+
+        <label class="field">
+          <span>Role</span>
+          <input id="acc-role" readonly placeholder="-" />
+        </label>
+
+        <label class="field">
+          <span>Created At</span>
+          <input id="acc-created" readonly placeholder="-" />
+        </label>
+
+        <label class="field">
+          <span>Update At</span>
+          <input id="acc-updated" readonly placeholder="-" />
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:14px; justify-content:center">
+        <button class="btn" id="btn-acc-save" type="button" disabled>Save</button>
+      </div>
+      <div class="note" id="acc-note"></div>
+    </div>
+  </section>
+
+<!-- WALLET (guna yang sedia ada, cuma tajuk tukar) -->
+  <section class="view" id="view-wallet">
+    <h2>Wallet D-Vantage</h2>
+    <div class="panel">
+      <div class="title">Balance</div>
+      <div class="sub" id="wallet-sub">Log masuk untuk tengok balance anda (ikut nombor yang didaftar sahaja).</div>
+
+      <div class="grid2">
+        <label class="field">
+          <span>No Phone (Auto)</span>
+          <input id="w-phone" placeholder="Sila login dulu..." readonly />
+        </label>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btn-wallet-get" type="button">Refresh Balance</button>
+      </div>
+
+      <div class="result" id="wallet-result">RM 0.00</div>
+      <div class="note" id="wallet-note"></div>
+    </div>
+  </section>
+
+  <!-- TRANSACTION HISTORY -->
+  <section class="view" id="view-history">
+    <h2>Transaction History</h2>
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="title">Senarai Transaksi</div>
+          <div class="sub">Firestore (primary) + localStorage (fallback/offline).</div>
         </div>
+        <button class="btn small ghost" id="btn-seed" type="button">Seed Demo</button>
+      </div>
 
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="title">Recent Orders</div>
-              <div class="sub">5 order terkini (demo localStorage).</div>
-            </div>
-            <button class="btn small ghost" id="btn-seed" type="button">Seed Demo</button>
-          </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Tarikh</th><th>Produk</th><th>Total</th><th>Status</th></tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+        <div class="empty" id="history-empty">Belum ada transaksi.</div>
+      </div>
+    </div>
+  </section>
 
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr><th>Tarikh</th><th>Produk</th><th>Total</th><th>Status</th></tr>
-              </thead>
-              <tbody id="recent-body"></tbody>
-            </table>
-            <div class="empty" id="recent-empty">Belum ada order.</div>
-          </div>
-        </div>
-      </section>
+  <!-- CALCULATED MLBB (guna placeholder sedia ada) -->
+  <section class="view" id="view-mlbb">
+    <h2>Calculated MLBB</h2>
+    <div class="panel">
+      <div class="title">Rangka Calculator</div>
+      <div class="sub">Nanti Danz bagitahu formula untuk: Zodiac / Legend / Winrate.</div>
 
-      <!-- MLBB CALC (placeholder) -->
-      <section class="view" id="view-mlbb">
-        <h2>MLBB Calculate</h2>
-        <div class="panel">
-          <div class="title">Rangka Calculator</div>
-          <div class="sub">Nanti Danz bagitahu formula untuk: Zodiac / Legend / Winrate.</div>
+      <div class="notice">
+        Placeholder siap — bila Danz confirm kira apa, kita tambah 3 tab kecil:
+        <b>Zodiac</b>, <b>Legend</b>, <b>Winrate</b>.
+      </div>
 
-          <div class="notice">
-            Placeholder siap — bila Danz confirm kira apa, kita tambah 3 tab kecil:
-            <b>Zodiac</b>, <b>Legend</b>, <b>Winrate</b>.
-          </div>
+      <div class="grid2">
+        <label class="field">
+          <span>Mode (placeholder)</span>
+          <select id="mlbb-mode">
+            <option value="zodiac">Zodiac</option>
+            <option value="legend">Legend</option>
+            <option value="winrate">Winrate</option>
+          </select>
+        </label>
 
-          <div class="grid2">
-            <label class="field">
-              <span>Mode (placeholder)</span>
-              <select id="mlbb-mode">
-                <option value="zodiac">Zodiac</option>
-                <option value="legend">Legend</option>
-                <option value="winrate">Winrate</option>
-              </select>
-            </label>
+        <label class="field">
+          <span>Input (placeholder)</span>
+          <input id="mlbb-input" placeholder="Nanti isi ikut formula..." />
+        </label>
+      </div>
 
-            <label class="field">
-              <span>Input (placeholder)</span>
-              <input id="mlbb-input" placeholder="Nanti isi ikut formula..." />
-            </label>
-          </div>
+      <button class="btn" id="mlbb-calc" type="button">Calculate (Placeholder)</button>
+      <div class="result" id="mlbb-result">RM 0.00</div>
+    </div>
+  </section>
 
-          <button class="btn" id="mlbb-calc" type="button">Calculate (Placeholder)</button>
-          <div class="result" id="mlbb-result">RM 0.00</div>
-        </div>
-      </section>
+  <!-- REGISTER / LOGIN -->
+  <section class="view" id="view-auth">
+    <h2>Register/Log-In</h2>
+    <div class="panel">
+      <div class="title">Auth</div>
+      <div class="sub" id="auth-sub">—</div>
+
+      <div class="row">
+        <button class="btn" id="btn-open-login" type="button">Login</button>
+        <button class="btn ghost" id="btn-open-register" type="button">Register</button>
+        <button class="btn danger" id="btn-do-logout" type="button">Logout</button>
+      </div>
+
+      <div class="note">*Semua flow login/register guna modal dari <code>auth.js</code> (localStorage).</div>
+    </div>
+  </section>
+
+  <!-- HELP -->
+  <section class="view" id="view-help">
+    <h2>Help/Customer Service</h2>
+    <div class="panel">
+      <div class="title">Bantuan</div>
+      <div class="sub">Kalau ada masalah order / topup, boleh contact.</div>
+
+      <div class="notice">
+        Contoh:
+        <br/>• WhatsApp: <b>01XXXXXXXX</b>
+        <br/>• Telegram: <b>@danzstoregaming</b>
+        <br/>• Waktu operasi: <b>10am - 10pm</b>
+      </div>
+    </div>
+  </section>
+
+</section>
 
       <!-- REGION CHECK -->
       <section class="view" id="view-region">
@@ -124,30 +237,6 @@
           <div class="result" id="region-result">—</div>
         </div>
       </section>
-
-            <!-- WALLET -->
-      <section class="view" id="view-wallet">
-        <h2>Wallet</h2>
-        <div class="panel">
-          <div class="title">Balance</div>
-          <div class="sub" id="wallet-sub">Log masuk untuk tengok balance anda (ikut nombor yang didaftar sahaja).</div>
-
-          <div class="grid2">
-            <label class="field">
-              <span>No Phone (Auto)</span>
-              <input id="w-phone" placeholder="Sila login dulu..." readonly />
-            </label>
-          </div>
-
-          <div class="row">
-            <button class="btn" id="btn-wallet-get" type="button">Refresh Balance</button>
-          </div>
-
-          <div class="result" id="wallet-result">RM 0.00</div>
-          <div class="note" id="wallet-note"></div>
-        </div>
-      </section>
-
 </section>
   </main>
 
@@ -166,6 +255,7 @@
 };
 </script>
 
+<script src="firebase.js" defer></script>
 <script src="auth.js" defer></script>
 <script src="dashboard.js" defer></script>
 </body>

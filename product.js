@@ -1,6 +1,6 @@
 // ===== DSG WALLET CONFIG =====
-const WALLET_NAME = "Wallet"; // nanti tukar jadi "Vault"
-const CURRENCY = "MYR";       // nanti tukar jadi "DM"
+const WALLET_NAME = "D-Vantage"; // nanti tukar jadi "Vault"
+const CURRENCY = "ÐV";       // nanti tukar jadi "DM"
 
 // Single source of truth (prefer auth.js API if loaded)
 function _walletApi(){
@@ -171,32 +171,61 @@ New: ${formatMoney(newBal)}`
 };
 
 
-// ===== FIRESTORE: SAVE ORDER (optional) =====
-// Requires Firebase compat SDK + auth.js init (window.DSGFirebase)
-async function DSG_saveOrderToFirestore(orderData){
+
+// ===== ORDER REF (DSGYYMMDDHHMM) + SAVE (Local + Firestore) =====
+function DSG_pad2(n){ return String(n).padStart(2,"0"); }
+function DSG_makeOrderRef(){
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = DSG_pad2(d.getMonth()+1);
+  const dd = DSG_pad2(d.getDate());
+  const hh = DSG_pad2(d.getHours());
+  const mi = DSG_pad2(d.getMinutes());
+  const base = `DSG${yy}${mm}${dd}${hh}${mi}`; // contoh: DSG2602192259
+
+  // Elak clash kalau ada 2 order dalam minit yang sama (akan jadi ...A, ...B)
+  const k = "DSG_REF_SEQ_" + base;
+  let n = 0;
+  try{ n = Number(localStorage.getItem(k) || 0); }catch(e){ n = 0; }
+  n = Number.isFinite(n) ? n : 0;
+  try{ localStorage.setItem(k, String(n+1)); }catch(e){}
+  if(n <= 0) return base;
+
+  const suffix = String.fromCharCode(64 + Math.min(n, 26)); // A..Z
+  return base + suffix;
+}
+
+function DSG_fmtDateTime(){
+  const d = new Date();
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} JAM ${DSG_pad2(d.getHours())}:${DSG_pad2(d.getMinutes())}`;
+}
+
+async function DSG_saveOrderToFirestore(orderRef, orderData){
   try{
     const fb = window.DSGFirebase;
-    if(!fb?.enabled || !fb.db){
-      return null; // Firestore not enabled
-    }
-    const docRef = await fb.db.collection("orders").add({
+    if(!fb?.enabled || !fb.db) return null;
+
+    await fb.db.collection("orders").doc(orderRef).set({
       ...orderData,
+      orderRef,
       createdAt: fb.serverTimestamp ? fb.serverTimestamp() : new Date()
-    });
-    return docRef.id;
+    }, { merge: true });
+
+    return orderRef;
   }catch(err){
-    console.warn("Save order failed:", err);
+    console.warn("[DSG] Save Firestore failed:", err);
     return null;
   }
 }
-function DSG_makeOrderRef(docId){
-  if(!docId) return "";
-  return "DSG-" + String(docId).slice(0,8).toUpperCase();
-}
-function DSG_fmtDateTime(){
-  const d = new Date();
-  const pad = (n)=> String(n).padStart(2,"0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+function DSG_saveOrderToLocal(orderData){
+  try{
+    const key = "DSG_ORDERS";
+    const list = JSON.parse(localStorage.getItem(key) || "[]");
+    list.push(orderData);
+    localStorage.setItem(key, JSON.stringify(list));
+  }catch(e){}
 }
 
 document.addEventListener("DOMContentLoaded", () => { // ===== Voucher text (SAFE) =====
@@ -2007,30 +2036,38 @@ else if (lbl === "Cinama") {
 
   // ===== Payment Method =====
 const tngPinFields = qs("#tng-pin-fields");
-const amtEl = document.getElementById("tngPinAmount");
-const pinEl = document.getElementById("tngPinCode");
+const amtEl = qs("#tngPinAmount");
+const pinEl = qs("#tngPinCode");
 
-const tngPinAmount = (amtEl?.value || "").trim();
-const tngPinCode   = (pinEl?.value || "").trim();
+function showTngPinFields(on){
+  if(!tngPinFields) return;
+  tngPinFields.classList.toggle("is-show", !!on);
+  tngPinFields.style.display = on ? "block" : "none"; // fallback
+  if(!on){
+    if(amtEl) amtEl.value = "";
+    if(pinEl) pinEl.value = "";
+  }
+}
 
+function setPayment(method){
+  qsa(".pay-tile").forEach(x=>{
+    const isOn = x.dataset.value === method;
+    x.classList.toggle("selected", isOn);
+  });
+  const hidden = qs("#payment-selected");
+  if(hidden) hidden.value = method || "";
+  showTngPinFields(method === "Touch 'N Go Pin");
+}
+
+// click handler
 qsa(".pay-tile").forEach(btn=>{
   btn.addEventListener("click", ()=>{
-    qsa(".pay-tile").forEach(x=>x.classList.remove("selected"));
-    btn.classList.add("selected");
-    qs("#payment-selected").value = btn.dataset.value;
-
-    // Show/hide extra fields for Touch 'N Go Pin
-    if (tngPinFields) {
-      const isTngPin = btn.dataset.value === "Touch 'N Go Pin";
-      tngPinFields.style.display = (isTngPin ? "block" : "none");
-
-      if (!isTngPin) {
-        if (tngPinAmountInput) tngPinAmountInput.value = "";
-        if (tngPinCodeInput) tngPinCodeInput.value = "";
-      }
-    }
+    setPayment(btn.dataset.value || "");
   });
 });
+
+// init (kalau ada value dari cache / back button)
+showTngPinFields(false);
 
   // ===== Voucher Use =====
 // ===== VOUCHER SYSTEM (MUDAH & SELAMAT) =====
@@ -2040,6 +2077,14 @@ const VOUCHERS = {
     class: "valid",
     discount: 0.10
   },
+
+  "DANZ5": {
+    text: "✅ Valid – RM5 OFF",
+    class: "valid",
+    amount: 5
+  },
+
+  
 
   "DANZHENSEM99": {
     text: "🔥 Legendary Code – 99% OFF",
@@ -2077,7 +2122,7 @@ qs("#use-voucher").addEventListener("click", () => {
   voucherStatus.classList.add(voucher.class);
 
   // simpan voucher untuk kegunaan lain (harga / WhatsApp)
-  window.appliedVoucher = voucher;
+  window.appliedVoucher = { ...voucher, code };
 });
 
   // ===== Helper scroll ke error =====
@@ -2310,10 +2355,25 @@ if (namaLower.includes("cinema") || namaLower.includes("cinemas") || namaLower.i
   }
 }
 
-    // 8) Voucher (optional)
-// 8) Voucher (optional) — SISTEM BARU
+    // 8) Voucher (optional) — SISTEM BARU
+const subtotalBeforeVoucher = Number(total || 0);
+let discountAmount = 0;
 if (window.appliedVoucher) {
-  total = total * (1 - window.appliedVoucher.discount);
+  const v = window.appliedVoucher || {};
+  // 1) Fixed amount discount (contoh: RM2 OFF)
+  if (Number.isFinite(Number(v.amount)) && Number(v.amount) > 0) {
+    discountAmount = Math.min(subtotalBeforeVoucher, Number(v.amount));
+    total = subtotalBeforeVoucher - discountAmount;
+  }
+  // 2) Percentage discount (contoh: 10% OFF)
+  else {
+    total = subtotalBeforeVoucher * (1 - Number(v.discount || 0));
+    discountAmount = subtotalBeforeVoucher - total;
+  }
+
+  // round 2dp
+  total = Math.round(total * 100) / 100;
+  discountAmount = Math.round(discountAmount * 100) / 100;
 }
 
     // 9) Line item ikut jenis page
@@ -2375,73 +2435,102 @@ Touch N' Go : ${moneyRM(total)}❎`;
     // 11) Item name untuk resit
     const selectedItemName = isJokiRankedNow ? "Joki Ranked (Per Star)" : (selected?.dataset?.name || "-");
 
-    // 12) Susun WhatsApp form baru (kemas)
-    const voucherLine = window.appliedVoucher
-      ? ("🎟️ *Voucher:* " + String(window.appliedVoucher.code || "").trim() + " (" + String(window.appliedVoucher.text || "").trim() + ")\n")
-      : "";
+    // 12) Susun WhatsApp form baru (kemas + detail + ada Order Ref)
+    const orderRef = DSG_makeOrderRef();
+    const orderTimeText = DSG_fmtDateTime();
 
-    const rankBlock = rankSummary ? ("\n" + rankSummary + "\n") : "";
-    const buyerBlock = buyerInfoLines ? buyerInfoLines : "• -\n";
+    const voucherBlock = window.appliedVoucher ? (() => {
+  const v = window.appliedVoucher || {};
+  const codeText = String(v.code || "").trim() || "—";
+  const isFixed = Number.isFinite(Number(v.amount)) && Number(v.amount) > 0;
 
-    const orderTime = DSG_fmtDateTime();
+  const tolakText = isFixed
+    ? `RM${Number(v.amount).toFixed(2)}`
+    : `${(Number(v.discount || 0) * 100).toFixed(0)}%`;
 
-    // 10) Siapkan data untuk simpan (Firestore)
-    const orderData = {
-      product: { name: nama, details: region, via },
-      item: isJokiRankedNow
-        ? { name: "Rank Booster", qty: (rankData?.totalStars || 0), price: total }
-        : { qty: selected?.dataset?.qty || "", name: selected?.dataset?.name || "", price: Number(selected?.dataset?.price || 0) },
-      buyer: { phone: buyerPhone, infoText: buyerInfoLines.trim() },
-      voucher: window.appliedVoucher ? { code: window.appliedVoucher.code || "", text: window.appliedVoucher.text || "" } : { code:"", text:"Tiada" },
-      payment: { method: payment, lines: paymentLines.trim() },
-      total: Number(total || 0),
-      status: (payment === "Wallet") ? "Paid (Wallet Deducted)" : "Pending"
-    };
+  return `━━━━━━━━━━━━━━━━━━━
+🎟️ *VOUCHER*
+• Code : ${codeText}
+• Tolak : ${tolakText}
+• Discount : -${moneyRM(discountAmount)}`;
+})() : (
+`━━━━━━━━━━━━━━━━━━━
+🎟️ *VOUCHER*
+• Code : Tiada`
+);
 
-    // simpan & dapatkan Order ID (Firestore doc id)
-    const docId = await DSG_saveOrderToFirestore(orderData);
-    const orderRef = docId ? DSG_makeOrderRef(docId) : "";
-    const orderRefLine = docId ? `🆔 *Order Ref:* ${orderRef}\n🧾 *Order ID:* ${docId}\n` : "";
+    const paymentSummaryBlock =
+`━━━━━━━━━━━━━━━━━━━
+💰 *PAYMENT SUMMARY*
+• Harga Asal : ${moneyRM(subtotalBeforeVoucher)}
+• Discount : -${moneyRM(discountAmount)}
+• Total Selepas Discount : ${moneyRM(total)}`;
 
-    // 10) Susun mesej WhatsApp (lebih kemas & detail)
-    const message =
-`🧾 *DANZSTOREGAMING — ORDER*
-
-━━━━━━━━━━━━━━━━━━━
-${orderRefLine}🕒 *Date/Time:* ${orderTime}
-
-━━━━━━━━━━━━━━━━━━━
+    const productDetailsBlock =
+`━━━━━━━━━━━━━━━━━━━
 📦 *PRODUCT DETAILS*
 • Product : ${nama}
 • Details : ${region}
 • Via : ${via}
-${isJokiRankedNow ? rankSummary : `• Item : ${selected.dataset.qty} ${selected.dataset.name}\n• Harga Item : ${moneyRM(Number(selected.dataset.price||0))}`}
+${isJokiRankedNow ? "• Item : Joki Ranked (Per Star)" : `• Item : ${selectedItemName}`}
+• Harga Item : ${moneyRM(subtotalBeforeVoucher)}`;
 
-━━━━━━━━━━━━━━━━━━━
+    const buyerInfoBlock =
+`━━━━━━━━━━━━━━━━━━━
 👤 *BUYER INFORMATION*
-${buyerBlock.trim() || "• -"}
+${(buyerInfoLines ? buyerInfoLines.trim() : "• -").trim()}`;
 
-━━━━━━━━━━━━━━━━━━━
-🎟️ *VOUCHER*
-${window.appliedVoucher ? voucherLine.replace(/\n$/,"") : "• Code : Tiada"}
-
-━━━━━━━━━━━━━━━━━━━
-💰 *PAYMENT SUMMARY*
-• Total : ${moneyRM(total)}
-
-━━━━━━━━━━━━━━━━━━━
+    const paymentMethodBlock =
+`━━━━━━━━━━━━━━━━━━━
 💳 *PAYMENT METHOD*
-${paymentLines.trim() || `• Method : ${payment}`}
+${paymentLines.trim()}`;
 
-━━━━━━━━━━━━━━━━━━━
+    const statusText = (payment === "Wallet") ? "Paid (Wallet Deducted)" : "Pending";
+    const statusBlock =
+`━━━━━━━━━━━━━━━━━━━
 📌 *STATUS*
-• Order Status : ${(payment === "Wallet") ? "Paid (Wallet Deducted)" : "Pending Confirmation"}
+• Order Status : ${statusText}`;
+
+    // 12.1) Simpan order (Local + Firestore)
+    const orderData = {
+      orderRef,
+      orderTimeISO: new Date().toISOString(),
+      orderTimeText,
+      product: { name: nama, details: region, via },
+      item: { name: selectedItemName, line: itemLine.trim() },
+      buyer: { wa: buyerPhone, local: buyerLocal, country, infoText: (buyerInfoLines || "").trim() },
+      voucher: window.appliedVoucher ? {
+        code: String(window.appliedVoucher.code || "").trim(),
+        text: String(window.appliedVoucher.text || "").trim(),
+        percent: Number(window.appliedVoucher.discount || 0),
+        discountAmount: Number(discountAmount || 0)
+      } : { code:"", text:"Tiada", percent:0, discountAmount:0 },
+      totals: { subtotal: Number(subtotalBeforeVoucher||0), discount: Number(discountAmount||0), total: Number(total||0) },
+      payment: { method: payment, lines: paymentLines.trim() },
+      status: statusText
+    };
+
+    DSG_saveOrderToLocal(orderData);
+    await DSG_saveOrderToFirestore(orderRef, orderData);
+
+    // 12.2) Susun mesej WhatsApp
+    const message =
+`🧾 *DANZSTOREGAMING — ORDER*
+🆔 *Order Ref:* ${orderRef}
+🕒 *Date/Time:* ${orderTimeText}
+
+${productDetailsBlock}
+${buyerInfoBlock}
+${voucherBlock}
+${paymentSummaryBlock}
+${paymentMethodBlock}
+${statusBlock}
 
 ✅ Sila semak & confirm order ini.`;
 
     // 13) Redirect WhatsApp admin
     const admin = "601139337462";
-    window.open(`https://wa.me/${admin}?text=${encodeURIComponent(message)}`, "_blank");
+window.open(`https://wa.me/${admin}?text=${encodeURIComponent(message)}`, "_blank");
 
 // ===== OVERRIDE TOTAL UNTUK CINEMAS =====
 if (isCinemasPage(nama)) {

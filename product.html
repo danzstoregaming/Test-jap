@@ -141,15 +141,15 @@
     <i class="fa-solid fa-chevron-down caret"></i>
   </button>
 
-  <div class="pay-content">
+  <div class="pay-wrap">
     <p class="helper">Sila pilih cara pembayaran anda.</p>
 
     <div id="payment-tiles" class="pay-grid">
 
       <!-- WALLET -->
-      <button class="pay-tile" data-value="Wallet">
+      <button class="pay-tile pay-tile--wide" data-value="Wallet">
         <i class="fa-solid fa-wallet"></i>
-        <span>Wallet</span>
+        <span>D-Vantage</span>
         <small id="wallet-mini" style="font-size:.75rem; opacity:.7; margin-top:4px;">
           (MYR 0.00)
         </small>
@@ -170,41 +170,43 @@
       <!-- TNG EWALLET -->
       <button class="pay-tile" data-value="Touch 'N Go E-Wallet">
         <i class="fa-solid fa-mobile-screen-button"></i>
-        <span>Touch 'N Go E-Wallet</span>
+        <span>Tng E-Wallet</span>
       </button>
 
       <!-- TNG PIN -->
       <button class="pay-tile" data-value="Touch 'N Go Pin">
         <i class="fa-solid fa-key"></i>
-        <span>Touch 'N Go Pin</span>
+        <span>tng Pin</span>
       </button>
 
     </div>
 
 <!-- Extra fields: only for Touch 'N Go Pin -->
-<div id="tng-pin-fields" style="display:none; margin-top:14px;">
-  <div style="display:flex; gap:12px; flex-wrap:wrap;">
-    <div style="flex:1; min-width:140px;">
-      <label for="tngPinAmount" style="display:block; margin-bottom:6px; opacity:.9;">
-        Harga Pin (RM)
-      </label>
-      <input id="tngPinAmount" type="number" step="0.01" inputmode="decimal" placeholder="Contoh: 10.00" />
+<div id="tng-pin-fields" class="pay-extra" aria-live="polite">
+  <div class="pay-extra-head">
+    <i class="fa-solid fa-key"></i>
+    <span>Touch 'N Go Pin Details</span>
+  </div>
+
+  <div class="pay-extra-grid">
+    <div class="pay-extra-field">
+      <label class="pay-extra-label" for="tngPinAmount">Harga Pin (RM)</label>
+      <input id="tngPinAmount" class="pay-extra-input" type="number" step="0.01" inputmode="decimal" placeholder="Contoh: RM 10.00" />
     </div>
 
-    <div style="flex:1; min-width:160px;">
-      <label for="tngPinCode" style="display:block; margin-bottom:6px; opacity:.9;">
-        TNG Pin
-      </label>
-      <input id="tngPinCode" type="text" inputmode="numeric" placeholder="Contoh: 1234 5678 90" />
+    <div class="pay-extra-field">
+      <label class="pay-extra-label" for="tngPinCode">TNG Pin</label>
+      <input id="tngPinCode" class="pay-extra-input" type="text" inputmode="numeric" placeholder="Contoh: 1234 5678 90" />
     </div>
   </div>
 
-  <div style="margin-top:8px; font-size:12px; opacity:.8;">
-    *Isi ikut jumlah pin & kod pin yang anda beli.
+  <div class="pay-extra-note">
+    *Isi ikut jumlah pin &amp; kod pin yang anda beli.
   </div>
 </div>
 
     <input type="hidden" id="payment-selected" />
+
   </div>
 </section>
 
@@ -307,23 +309,13 @@
 </footer>
 <!-- ===== FOOTER END ===== -->
 
-<!-- ===== Firebase (Firestore) ===== -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-  // Firebase config (public)
-  window.DSG_FIREBASE_CONFIG = {
-  "apiKey": "AIzaSyCneV5hbQbknKzCkY5R5l_S_gpG9g-MqkY",
-  "authDomain": "danzstoregaming-order.firebaseapp.com",
-  "projectId": "danzstoregaming-order",
-  "storageBucket": "danzstoregaming-order.firebasestorage.app",
-  "messagingSenderId": "242913566087",
-  "appId": "1:242913566087:web:648a27a304eb0d0623c722"
-};
-</script>
+<!-- ===== Firebase (Firestore Orders) ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
+<script src="firebase-init.js" defer></script>
 
 <script src="auth.js" defer></script>
-  <script src="product.js" defer></script>
+<script src="product.js" defer></script>
 <!-- ===== MINI ADMIN PANEL ===== -->
 <div id="adminPanel" style="
 position:fixed;

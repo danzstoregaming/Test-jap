@@ -23,16 +23,6 @@ body {
   align-items: center;
 }
 
-/* Semua kad & panel putih */
-.product-card,
-.card-section,
-.option-card,
-.pay-tile,
-.voucher-row input {
-  background: #ffffff;
-  color: #0f172a;
-}
-
 /* Header kekal gradient */
 .flat-full-header{
   width:100%;
@@ -164,7 +154,7 @@ body {
 /* ===== Product info card ===== */
 .product-card{
   display:flex; gap:16px; padding:18px;
-  background:#ffffff;
+  background: rgba(10,18,34,0.7);
   border:2px solid transparent; border-radius:18px;
 }
 .product-card img{
@@ -178,7 +168,7 @@ body {
 
 /* ===== shared section card ===== */
 .card-section{
-  background: #ffffff;
+  background: rgba(10,18,34,0.7);
   border:1px solid rgba(0,0,0,.08);
   border-radius:18px;
   padding:0 14px 14px;
@@ -235,7 +225,7 @@ body {
   width:100%;
 }
 .option-card {
-  background: #ffffff;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
   color: #1a1a1a;
   border: 1px solid rgba(0,0,0,.1);
   border-radius: 16px;
@@ -395,21 +385,138 @@ body {
 .pay-wrap{ overflow:hidden; max-height:1000px; opacity:1; transition:max-height .35s ease, opacity .35s ease; }
 .card-section:not(.open) .pay-wrap{ max-height:0; opacity:0; }
 
+
 .pay-grid{
-  display:grid; gap:12px; grid-template-columns:repeat(2,1fr);
-  padding-bottom:8px; margin-top:6px;
+  display:grid;
+  gap:12px;
+  grid-template-columns:repeat(2,1fr);
+  padding-bottom:8px;
+  margin-top:6px;
 }
+
+/* Payment tiles — kekal warna theme website (neon glass), cuma susunan ikut contoh */
 .pay-tile{
-  display:flex; flex-direction:column; align-items:center; gap:8px;
-  padding:16px 10px; border-radius:14px; border:1px solid rgba(0,0,0,.1);
-  background:#ffffff; color:#0f172a; cursor:pointer;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .2s;
-  box-shadow:0 6px 16px rgba(0,0,0,.05);
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:92px;
+  padding:16px 10px;
+  border-radius:16px;
+
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12);
+  color:#e6f0ff;
+
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .2s ease;
+  box-shadow:0 10px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(10px) saturate(140%);
 }
-.pay-tile i{ font-size:20px; color:#00a8ff; }
+
+.pay-tile i{
+  font-size:22px;
+  color:#00e5ff;
+  opacity:.95;
+}
+
+.pay-tile span{
+  font-family:'Orbitron',sans-serif;
+  font-weight:800;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  text-align:center;
+}
+
+.pay-tile small{
+  color:#9fb6d0;
+  opacity:.9;
+  font-weight:700;
+}
+
+.pay-tile:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 26px rgba(0,0,0,.45), 0 0 0 2px rgba(0,229,255,.10) inset;
+  border-color: rgba(0,229,255,.35);
+}
+
+/* Selected — neon cyan glow (sama macam theme site) */
 .pay-tile.selected{
-  border-color:#00e5ff; box-shadow:0 0 0 2px rgba(0,229,255,.25) inset, 0 8px 20px rgba(0,229,255,.15);
+  border-color:#00e5ff;
+  box-shadow:0 0 0 2px rgba(0,229,255,.35) inset, 0 12px 26px rgba(0,229,255,.20);
   transform:translateY(-1px);
+}
+
+.pay-tile.selected i{ color:#00e5ff; }
+/* Extra section — muncul bila pilih Touch 'N Go Pin' */
+.pay-extra{
+  display:none;
+  margin-top:14px;
+  padding:14px 12px 12px;
+  border-radius:16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 10px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+
+.pay-extra.is-show{
+  display:block;
+}
+
+.pay-extra-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:'Orbitron',sans-serif;
+  font-weight:800;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  color:#ffffff;
+  margin-bottom:10px;
+}
+
+.pay-extra-head i{ color:#00e5ff; }
+
+.pay-extra-grid{
+  display:grid;
+  gap:12px;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+}
+
+@media (max-width:420px){
+  .pay-extra-grid{ grid-template-columns:1fr; }
+}
+
+.pay-extra-label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:800;
+  color:#e6f0ff;
+  opacity:.95;
+}
+
+.pay-extra-input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(148,163,184,0.8);
+  background: radial-gradient(circle at 0 0, rgba(0,229,255,0.18), transparent 55%),
+              rgba(15,23,42,0.96);
+  color:#e6f0ff;
+  box-shadow:
+    0 0 0 1px rgba(15,23,42,0.9),
+    0 10px 22px rgba(0,0,0,0.7);
+}
+
+.pay-extra-input::placeholder{ color:#9fb6d0; }
+
+.pay-extra-note{
+  margin-top:10px;
+  font-size:12px;
+  color:#9fb6d0;
+  font-weight:700;
 }
 
 /* Voucher row */
@@ -1067,4 +1174,135 @@ select#wa-country{
 
 .full {
   width: 100%;
+}
+
+/* ===== Payment Method layout (ikut susunan contoh, kekal warna theme website) ===== */
+#payment-method .pay-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:12px;
+  margin-top:10px;
+}
+
+#payment-method .pay-tile i{
+  font-size:22px;
+  color:#00a8ff;
+}
+
+#payment-method .pay-tile span{
+  font-family: 'Orbitron', sans-serif;
+  font-weight:800;
+  letter-spacing:.4px;
+}
+
+#payment-method .pay-tile small{
+  font-size:.78rem;
+  opacity:.75;
+}
+
+#payment-method .pay-tile:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(2, 6, 23, .12);
+}
+
+#payment-method .pay-tile.selected{
+  border-color:#00e5ff;
+  box-shadow: 0 0 0 2px rgba(0,229,255,.20) inset, 0 12px 22px rgba(0,229,255,.12);
+}
+
+#payment-method .pay-tile.selected i{
+  color:#00e5ff;
+}
+
+/* 1 button besar (Wallet) */
+#payment-method .pay-tile--wide{
+  grid-column:1 / -1;
+  min-height:110px;
+}
+
+/* Section tambahan untuk TNG Pin */
+#payment-method .pay-extra{
+  margin-top:12px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.12);
+  background: rgba(0,229,255,.06);
+}
+
+#payment-method .pay-extra-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  color:#0f172a;
+  margin-bottom:10px;
+}
+
+#payment-method .pay-extra-head i{
+  color:#00a8ff;
+}
+
+#payment-method .pay-extra-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+@media (min-width: 520px){
+  #payment-method .pay-extra-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+
+#payment-method .pay-extra-field label{
+  display:block;
+  font-size:.85rem;
+  font-weight:800;
+  color:#0f172a;
+  margin-bottom:6px;
+}
+
+#payment-method .pay-extra-field input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.14);
+  outline:none;
+}
+
+#payment-method .pay-extra-field input:focus{
+  border-color:#00e5ff;
+  box-shadow:0 0 0 3px rgba(0,229,255,.18);
+}
+
+/* ==== FIX: TNG PIN extra section text visibility (contrast) ==== */
+#tng-pin-fields,
+#tng-pin-fields *{
+  color: #e6f0ff;
+}
+
+#tng-pin-fields{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+#tng-pin-fields .pay-extra-head{
+  opacity: 1;
+  font-weight: 900;
+  text-shadow: 0 0 14px rgba(0,229,255,.25);
+}
+
+#tng-pin-fields .pay-extra-label{
+  opacity: 1;
+  font-weight: 900;
+}
+
+#tng-pin-fields .pay-extra-note{
+  opacity: 1;
+}
+
+#tng-pin-fields .pay-extra-input{
+  color: #e6f0ff;
+}
+
+#tng-pin-fields .pay-extra-input::placeholder{
+  color: rgba(159,182,208,.95);
 }
