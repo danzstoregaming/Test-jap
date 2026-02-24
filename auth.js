@@ -1,237 +1,50 @@
-/* auth.js — DanzStoreGaming simple auth (localStorage)
-   - Register (first time): phone + OTP + 6-digit PIN
-   - Login: phone + 6-digit PIN (NO OTP)
-   - Forgot PIN: phone + OTP + new 6-digit PIN
-   - Session stored in localStorage (DSG_AUTH)
+/* auth.js — DanzStoreGaming Auth + Wallet (localStorage) + Firestore mirror (optional)
+   FIX v3 (Feb 2026):
+   - Buang semua code dock/confirm duplicate yang buat UI hilang.
+   - Tambah Bottom-Right Drag Dock: default half-hidden (2/2), boleh tarik, auto-hide.
+   - Auto open modal login jika belum login (sekali per tab), TANPA window.confirm.
 
-   NOTE (Fix Feb 2026):
-   - Buang code duplicate/broken (syntax error, function missing).
-   - Pastikan button Login/Register (dashboard.html) ada function & tak double-binding yang mengganggu.
+   Public API (used by dashboard.js):
+   - window.DSGAuth.openModal({forceRegister?})
+   - window.DSGAuth.getSession()
+   - window.DSGAuth.logout()
+   - window.DSGAuth.normalizePhone(raw)
+   - window.DSGAuth.wallet.getBalance(phone)
+   - window.DSGAuth.wallet.setBalance(phone, amount)
 */
 
 (function () {
   'use strict';
 
+  // ===== VERSION (cache bust helper) =====
+  window.DSG_AUTH_VERSION = 'v5.0.0';
+  try{ console.log('[DSGAuth] loaded', window.DSG_AUTH_VERSION); }catch{}
+
+  'use strict';
+
   // ===== Constants =====
   const LS_SESSION = 'DSG_AUTH';
+  const LS_COUNTRY = 'DSG_COUNTRY';
+  const USER_KEY_PREFIX = 'DSG_USER_';
+  const OTP_PREFIX = 'DSG_OTP_';
+
   const SESSION_TTL_DAYS = 7;
   const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
-  const LAST_ACTIVE_THROTTLE_MS = 30 * 1000; // update at most every 30s
+  const LAST_ACTIVE_THROTTLE_MS = 30 * 1000;
 
-  const USER_KEY_PREFIX = 'DSG_USER_';
+  const OTP_TTL_MS = 5 * 60 * 1000;
+  const OTP_RESEND_MS = 30 * 1000;
 
-  const LS_COUNTRY = 'DSG_COUNTRY';
+  // Auto popup login (once per tab)
+  const SS_AUTOPOP = 'DSG_AUTH_AUTOPOP_SHOWN';
+
   const COUNTRIES = [
     { code: 'MY', dial: '60', flag: '🇲🇾', label: 'Malaysia' },
     { code: 'SG', dial: '65', flag: '🇸🇬', label: 'Singapore' },
     { code: 'ID', dial: '62', flag: '🇮🇩', label: 'Indonesia' },
   ];
 
-  // ===== Country / phone normalization =====
-  function getCountry() {
-    try {
-      const raw = localStorage.getItem(LS_COUNTRY);
-      if (raw) {
-        const c = JSON.parse(raw);
-        if (c && c.code && c.dial) return c;
-      }
-    } catch {}
-    return COUNTRIES[0];
-  }
-
-  function setCountry(code) {
-    const c = COUNTRIES.find((x) => x.code === code) || COUNTRIES[0];
-    try {
-      localStorage.setItem(LS_COUNTRY, JSON.stringify(c));
-    } catch {}
-    return c;
-  }
-
-  function countryLabel(c) {
-    return `${c.flag} +${c.dial}`;
-  }
-
-  function normalizeDigitsLocalMY(raw) {
-    let p = String(raw || '').replace(/\D/g, '');
-    if (!p) return '';
-    if (p.startsWith('00')) p = p.slice(2);
-    if (p.startsWith('60')) p = p.slice(2); // convert 60.. -> 0..
-    if (!p.startsWith('0')) p = '0' + p;
-    return p;
-  }
-
-  function normalizePhone(raw) {
-    const c = getCountry();
-    if (c.code === 'MY') return normalizeDigitsLocalMY(raw);
-
-    // For non-MY: store as international digits without '+' (e.g. 6591234567)
-    const d = String(raw || '').replace(/\D/g, '');
-    if (!d) return '';
-
-    // If already starts with country dial code, keep it.
-    if (d.startsWith(c.dial)) return d;
-
-    // If user typed 00<dial>..., convert to <dial>...
-    if (d.startsWith('00' + c.dial)) return d.slice(2);
-
-    // If user typed leading 0 (local style), drop it and prefix dial.
-    if (d.startsWith('0')) return c.dial + d.slice(1);
-
-    // Fallback: assume they typed local digits without 0.
-    return c.dial + d;
-  }
-
-  function applyCountryUI(root) {
-    const c = getCountry();
-    const btns = root.querySelectorAll('[data-country-btn]');
-    btns.forEach((b) => (b.textContent = countryLabel(c)));
-
-    // phone placeholder depends on country
-    const ph =
-      c.code === 'MY'
-        ? 'contoh: 6011xxxxxxx / 01xxxxxxxx'
-        : `contoh: +${c.dial}xxxxxxxxxx`;
-
-    ['dsg-login-phone', 'dsg-reg-phone', 'dsg-forgot-phone'].forEach((id) => {
-      const el = root.querySelector('#' + id);
-      if (el && !el.dataset.userTouched) el.placeholder = ph;
-    });
-  }
-
-  function initCountryPicker(root) {
-    applyCountryUI(root);
-
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-country-btn]');
-      if (btn) {
-        const wrap = btn.closest('.dsg-auth-phonewrap');
-        if (wrap) wrap.classList.toggle('open');
-        e.preventDefault();
-        return;
-      }
-
-      const item = e.target.closest('[data-country]');
-      if (item) {
-        const code = item.getAttribute('data-country');
-        setCountry(code);
-        applyCountryUI(root);
-        root
-          .querySelectorAll('.dsg-auth-phonewrap.open')
-          .forEach((w) => w.classList.remove('open'));
-        e.preventDefault();
-        return;
-      }
-
-      if (!e.target.closest('.dsg-auth-phonewrap')) {
-        root
-          .querySelectorAll('.dsg-auth-phonewrap.open')
-          .forEach((w) => w.classList.remove('open'));
-      }
-    });
-
-    // mark touched so placeholder won't overwrite when switching
-    root.querySelectorAll("input[inputmode='tel']").forEach((inp) => {
-      inp.addEventListener(
-        'input',
-        () => {
-          inp.dataset.userTouched = '1';
-        },
-        { once: true }
-      );
-    });
-  }
-
-  // ===== OTP (DEMO / local-only) =====
-  const OTP_PREFIX = 'DSG_OTP_'; // DSG_OTP_<purpose>_<phone>
-  const OTP_TTL_MS = 5 * 60 * 1000; // 5 min
-  const OTP_RESEND_MS = 30 * 1000; // 30 sec throttle
-
-  function isValidPin(pin) {
-    return /^\d{6}$/.test(String(pin || '').trim());
-  }
-
-  function isValidOtp(code) {
-    return /^\d{6}$/.test(String(code || '').trim());
-  }
-
-  function otpKey(phone, purpose) {
-    const p = normalizePhone(phone);
-    return `${OTP_PREFIX}${purpose}_${p}`;
-  }
-
-  function genOtp6() {
-    return String(Math.floor(100000 + Math.random() * 900000));
-  }
-
-  function getOtpRecord(phone, purpose) {
-    try {
-      return JSON.parse(localStorage.getItem(otpKey(phone, purpose)) || 'null');
-    } catch {
-      return null;
-    }
-  }
-
-  function setOtpRecord(phone, purpose, rec) {
-    localStorage.setItem(otpKey(phone, purpose), JSON.stringify(rec));
-  }
-
-  function clearOtp(phone, purpose) {
-    localStorage.removeItem(otpKey(phone, purpose));
-  }
-
-  function sendOtp(phone, purpose) {
-    const p = normalizePhone(phone);
-    const now = Date.now();
-
-    const existing = getOtpRecord(p, purpose);
-    if (existing?.sentAt && now - existing.sentAt < OTP_RESEND_MS) {
-      return {
-        ok: false,
-        msg: `Tunggu ${Math.ceil((OTP_RESEND_MS - (now - existing.sentAt)) / 1000)}s sebelum resend.`,
-      };
-    }
-
-    const code = genOtp6();
-    const rec = {
-      purpose,
-      phone: p,
-      code,
-      sentAt: now,
-      expiresAt: now + OTP_TTL_MS,
-      verifiedAt: null,
-    };
-    setOtpRecord(p, purpose, rec);
-
-    // DEMO: papar OTP (nanti ganti ke SMS API)
-    console.log(`[DSG OTP DEMO] purpose=${purpose} phone=${p} otp=${code}`);
-    alert(`OTP (DEMO) untuk ${p}: ${code}\n\n*Ini demo. Nanti boleh sambung SMS API.*`);
-
-    return { ok: true, msg: 'OTP dihantar (demo).' };
-  }
-
-  function verifyOtp(phone, purpose, input) {
-    const p = normalizePhone(phone);
-    const code = String(input || '').trim();
-    if (!isValidOtp(code)) return { ok: false, msg: 'OTP mesti 6 digit.' };
-
-    const rec = getOtpRecord(p, purpose);
-    if (!rec) return { ok: false, msg: 'OTP belum dihantar. Tekan Send OTP dulu.' };
-    if (Date.now() > rec.expiresAt) return { ok: false, msg: 'OTP dah expired. Sila resend.' };
-    if (rec.code !== code) return { ok: false, msg: 'OTP salah.' };
-
-    rec.verifiedAt = Date.now();
-    setOtpRecord(p, purpose, rec);
-    return { ok: true, msg: 'OTP verified.' };
-  }
-
-  function isOtpVerified(phone, purpose) {
-    const rec = getOtpRecord(phone, purpose);
-    if (!rec?.verifiedAt) return false;
-    if (Date.now() > rec.expiresAt) return false;
-    return true;
-  }
-
-  // ===== Firestore helpers (Firestore-first, local fallback) =====
+  // ===== Firestore helpers (optional) =====
   function fsDb() {
     const fb = window.DSGFirebase;
     return fb && fb.enabled && fb.db ? fb.db : null;
@@ -316,9 +129,7 @@
 
     try {
       const u = await fsGetUser(p);
-      if (u) {
-        localStorage.setItem(userKey(p), JSON.stringify(u));
-      }
+      if (u) localStorage.setItem(userKey(p), JSON.stringify(u));
     } catch (e) {
       console.warn('[DSG Firestore] sync user failed', e);
     }
@@ -334,6 +145,177 @@
     } catch (e) {
       console.warn('[DSG Firestore] sync wallet failed', e);
     }
+  }
+
+  // ===== Country + normalize =====
+  function getCountry() {
+    try {
+      const raw = localStorage.getItem(LS_COUNTRY);
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && c.code && c.dial) return c;
+      }
+    } catch {}
+    return COUNTRIES[0];
+  }
+
+  function setCountry(code) {
+    const c = COUNTRIES.find((x) => x.code === code) || COUNTRIES[0];
+    try {
+      localStorage.setItem(LS_COUNTRY, JSON.stringify(c));
+    } catch {}
+    return c;
+  }
+
+  function normalizeDigitsLocalMY(raw) {
+    let p = String(raw || '').replace(/\D/g, '');
+    if (!p) return '';
+    if (p.startsWith('00')) p = p.slice(2);
+    if (p.startsWith('60')) p = p.slice(2);
+    if (!p.startsWith('0')) p = '0' + p;
+    return p;
+  }
+
+  function normalizePhone(raw) {
+    const c = getCountry();
+
+    if (c.code === 'MY') return normalizeDigitsLocalMY(raw);
+
+    const d = String(raw || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.startsWith(c.dial)) return d;
+    if (d.startsWith('00' + c.dial)) return d.slice(2);
+    if (d.startsWith('0')) return c.dial + d.slice(1);
+    return c.dial + d;
+  }
+
+  function countryLabel(c) {
+    return `${c.flag} +${c.dial}`;
+  }
+
+  function applyCountryUI(root) {
+    const c = getCountry();
+    root.querySelectorAll('[data-country-btn]').forEach((b) => (b.textContent = countryLabel(c)));
+
+    const ph =
+      c.code === 'MY' ? 'contoh: 6011xxxxxxx / 01xxxxxxxx' : `contoh: +${c.dial}xxxxxxxxxx`;
+
+    ['dsg-login-phone', 'dsg-reg-phone', 'dsg-forgot-phone'].forEach((id) => {
+      const el = root.querySelector('#' + id);
+      if (el && !el.dataset.userTouched) el.placeholder = ph;
+    });
+  }
+
+  function initCountryPicker(root) {
+    applyCountryUI(root);
+
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-country-btn]');
+      if (btn) {
+        const wrap = btn.closest('.dsg-auth-phonewrap');
+        if (wrap) wrap.classList.toggle('open');
+        e.preventDefault();
+        return;
+      }
+
+      const item = e.target.closest('[data-country]');
+      if (item) {
+        const code = item.getAttribute('data-country');
+        setCountry(code);
+        applyCountryUI(root);
+        root.querySelectorAll('.dsg-auth-phonewrap.open').forEach((w) => w.classList.remove('open'));
+        e.preventDefault();
+        return;
+      }
+
+      if (!e.target.closest('.dsg-auth-phonewrap')) {
+        root.querySelectorAll('.dsg-auth-phonewrap.open').forEach((w) => w.classList.remove('open'));
+      }
+    });
+
+    root.querySelectorAll("input[inputmode='tel']").forEach((inp) => {
+      inp.addEventListener(
+        'input',
+        () => {
+          inp.dataset.userTouched = '1';
+        },
+        { once: true }
+      );
+    });
+  }
+
+  // ===== OTP (demo/local) =====
+  function isValidPin(pin) {
+    return /^\d{6}$/.test(String(pin || '').trim());
+  }
+  function isValidOtp(code) {
+    return /^\d{6}$/.test(String(code || '').trim());
+  }
+
+  function otpKey(phone, purpose) {
+    const p = normalizePhone(phone);
+    return `${OTP_PREFIX}${purpose}_${p}`;
+  }
+  function genOtp6() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  function getOtpRecord(phone, purpose) {
+    try {
+      return JSON.parse(localStorage.getItem(otpKey(phone, purpose)) || 'null');
+    } catch {
+      return null;
+    }
+  }
+  function setOtpRecord(phone, purpose, rec) {
+    localStorage.setItem(otpKey(phone, purpose), JSON.stringify(rec));
+  }
+  function clearOtp(phone, purpose) {
+    localStorage.removeItem(otpKey(phone, purpose));
+  }
+
+  function sendOtp(phone, purpose) {
+    const p = normalizePhone(phone);
+    const now = Date.now();
+
+    const existing = getOtpRecord(p, purpose);
+    if (existing?.sentAt && now - existing.sentAt < OTP_RESEND_MS) {
+      return {
+        ok: false,
+        msg: `Tunggu ${Math.ceil((OTP_RESEND_MS - (now - existing.sentAt)) / 1000)}s sebelum resend.`,
+      };
+    }
+
+    const code = genOtp6();
+    const rec = {
+      purpose,
+      phone: p,
+      code,
+      sentAt: now,
+      expiresAt: now + OTP_TTL_MS,
+      verifiedAt: null,
+    };
+    setOtpRecord(p, purpose, rec);
+
+    console.log(`[DSG OTP DEMO] purpose=${purpose} phone=${p} otp=${code}`);
+    alert(`OTP (DEMO) untuk ${p}: ${code}\n\n*Ini demo. Nanti boleh sambung SMS API.*`);
+
+    return { ok: true, msg: 'OTP dihantar (demo).' };
+  }
+
+  function verifyOtp(phone, purpose, input) {
+    const p = normalizePhone(phone);
+    const code = String(input || '').trim();
+    if (!isValidOtp(code)) return { ok: false, msg: 'OTP mesti 6 digit.' };
+
+    const rec = getOtpRecord(p, purpose);
+    if (!rec) return { ok: false, msg: 'OTP belum dihantar. Tekan Send OTP dulu.' };
+    if (Date.now() > rec.expiresAt) return { ok: false, msg: 'OTP dah expired. Sila resend.' };
+    if (rec.code !== code) return { ok: false, msg: 'OTP salah.' };
+
+    rec.verifiedAt = Date.now();
+    setOtpRecord(p, purpose, rec);
+    return { ok: true, msg: 'OTP verified.' };
   }
 
   // ===== User storage =====
@@ -361,7 +343,6 @@
     const p = normalizePhone(phone);
     localStorage.setItem(userKey(p), JSON.stringify(userObj));
 
-    // mirror to Firestore (best-effort)
     if (fsEnabled()) {
       fsSetUser(p, {
         ...userObj,
@@ -403,7 +384,6 @@
   function getSession() {
     const s = readSessionRaw();
     if (sessionIsExpired(s)) {
-      // auto logout selepas 7 hari tak aktif
       try {
         localStorage.removeItem(LS_SESSION);
       } catch {}
@@ -419,10 +399,7 @@
     localStorage.setItem(LS_SESSION, JSON.stringify({ phone: p, loggedInAt: now, lastActiveAt: now }));
     window.dispatchEvent(new CustomEvent('dsg:auth-changed', { detail: { phone: p } }));
 
-    // pull latest user+wallet from Firestore into local cache (best-effort)
-    syncFromFirestoreToLocal(p).catch((e) => console.warn('[DSG Firestore] sync after login failed', e));
-
-    // mark active
+    syncFromFirestoreToLocal(p).catch(() => {});
     touchSession(true);
   }
 
@@ -451,7 +428,6 @@
     startSessionActivityListeners.__started = true;
 
     const onActivity = () => touchSession(false);
-
     ['click', 'keydown', 'touchstart', 'scroll'].forEach((evt) => {
       window.addEventListener(evt, onActivity, { passive: true });
     });
@@ -469,7 +445,6 @@
     const key = `DSG_WALLET_${p}`;
     const raw = localStorage.getItem(key);
 
-    // migrate old JSON wallet -> number string
     if (raw && raw.trim().startsWith('{')) {
       try {
         const obj = JSON.parse(raw);
@@ -503,7 +478,6 @@
     localStorage.setItem(`DSG_WALLET_${p}`, safe.toFixed(2));
     window.dispatchEvent(new CustomEvent('dsg:wallet-changed', { detail: { phone: p, balance: safe } }));
 
-    // mirror to Firestore (best-effort)
     if (fsEnabled()) {
       fsEnsureWallet(p)
         .then(() => fsSetWallet(p, safe))
@@ -525,9 +499,8 @@
     return { ok: true, balance: walletGet(phone) };
   }
 
-  // ===== UI: modal + styles =====
-  function injectStyles() {
-    // Replace previous injected style so updates always apply
+  // ===== UI styles + modal =====
+    function injectStyles() {
     const existing = document.getElementById('dsg-auth-style');
     if (existing) existing.remove();
 
@@ -539,29 +512,119 @@
         --dsg-bg-1:#0b1220;
         --dsg-card:rgba(15,23,42,.72);
         --dsg-border:rgba(0,229,255,.22);
-        --dsg-border-soft:rgba(255,255,255,.12);
         --dsg-text:#e7f4ff;
         --dsg-muted:rgba(231,244,255,.75);
-        --dsg-input:rgba(255,255,255,.06);
         --dsg-accent1:#00e5ff;
         --dsg-accent2:#7cffb2;
       }
 
+      /* Remove blue tap highlight (mobile) */
+      * { -webkit-tap-highlight-color: transparent; }
+      a, button { -webkit-tap-highlight-color: transparent; }
+
+            /* ===== Floating Auth Button (consistent on all pages) ===== */
+      .dsg-auth-fab{
+        position: fixed !important;
+        right: 16px !important;
+        bottom: 18px !important;
+        z-index: 2147483640;
+
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        border:1px solid rgba(0,229,255,.28);
+        background: radial-gradient(120% 120% at 0% 0%, rgba(0,229,255,.25), transparent 55%),
+                    linear-gradient(135deg, rgba(11,18,32,.92), rgba(6,10,18,.92));
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+
+        cursor:pointer;
+        user-select:none;
+
+        box-shadow:0 14px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(0,229,255,.10) inset;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        touch-action: manipulation;
+      }
+      .dsg-auth-fab:hover{
+        transform: translateY(-2px);
+        border-color: rgba(0,229,255,.45);
+        box-shadow:0 18px 36px rgba(0,0,0,.62), 0 0 18px rgba(0,229,255,.20);
+      }
+      .dsg-auth-fab:active{ transform: translateY(0px) scale(.98); }
+
+      .dsg-auth-fab .ico{
+        width: 40px;
+        height: 40px;
+        border-radius: 16px;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        border:1px solid rgba(255,255,255,.12);
+        background:linear-gradient(90deg, rgba(0,229,255,.16), rgba(124,255,178,.10));
+        box-shadow:0 0 0 1px rgba(0,229,255,.10) inset;
+
+        font-weight:1000;
+        color: var(--dsg-text);
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      /* Safe area (iPhone) */
+      @supports (padding: max(0px)){
+        .dsg-auth-fab{
+          bottom: max(18px, env(safe-area-inset-bottom));
+          right: max(16px, env(safe-area-inset-right));
+        }
+      }
+
+.dsg-auth-dock .txt{ min-width:0; }
+        .dsg-auth-dock .txt .t2{ display:none; }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+    function renderModal() {
+    // host (light DOM) - for toggling display
+    let host = document.getElementById('dsg-auth-backdrop');
+    if (host) return;
+
+    host = document.createElement('div');
+    host.id = 'dsg-auth-backdrop';
+    // Keep host minimal; all UI/styling inside shadow so home/dashboard CSS can't kacau.
+    host.style.position = 'fixed';
+    host.style.inset = '0';
+    host.style.zIndex = '9999';
+    host.style.display = 'none';
+    document.body.appendChild(host);
+
+    const shadow = host.attachShadow({ mode: 'open' });
+
+    shadow.innerHTML = `
+      <style>
+      :host{ all: initial; }
+      *, *::before, *::after { box-sizing:border-box; }
       .dsg-auth-backdrop{
         position:fixed; inset:0;
         background:rgba(2,6,23,.68);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
-        display:none;
+        display:flex;
         align-items:center; justify-content:center;
-        z-index:9999;
         padding:16px;
+        font-family: inherit;
       }
-
       .dsg-auth-modal{
         width:min(560px, 100%);
-        color:var(--dsg-text);
-        border:1px solid var(--dsg-border);
+        color:#e7f4ff;
+        border:1px solid rgba(0,229,255,.22);
         border-radius:18px;
         padding:16px;
         background:
@@ -573,30 +636,26 @@
           0 0 0 1px rgba(255,255,255,.06) inset;
         font-family: inherit;
       }
-
       .dsg-auth-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
       .dsg-auth-title{font-size:20px; font-weight:900; letter-spacing:.2px;}
-
       .dsg-auth-close{
         width:38px; height:38px; border-radius:12px;
         border:1px solid rgba(255,255,255,.14);
         background:rgba(255,255,255,.06);
-        color:var(--dsg-text);
+        color:#e7f4ff;
         font-size:22px; line-height:1;
         cursor:pointer;
         display:flex; align-items:center; justify-content:center;
         opacity:.95;
       }
       .dsg-auth-close:active{ transform:scale(.98); }
-
-      .dsg-auth-help{font-size:12px; color:var(--dsg-muted); margin-top:6px; line-height:1.45;}
-
+      .dsg-auth-help{font-size:12px; color:rgba(231,244,255,.75); margin-top:6px; line-height:1.45;}
       .dsg-auth-tabs{display:flex; gap:10px; margin:12px 0 14px;}
       .dsg-auth-tab{
         flex:1; padding:10px 12px; border-radius:14px; cursor:pointer;
         border:1px solid rgba(255,255,255,.14);
         background:rgba(255,255,255,.04);
-        color:var(--dsg-text);
+        color:#e7f4ff;
         font-weight:900; letter-spacing:.2px;
       }
       .dsg-auth-tab.active{
@@ -604,29 +663,25 @@
         background:linear-gradient(90deg, rgba(0,229,255,.16), rgba(124,255,178,.10));
         box-shadow: 0 0 0 1px rgba(0,229,255,.10) inset;
       }
-
       .dsg-auth-row{display:flex; flex-direction:column; gap:6px; margin:10px 0;}
-      .dsg-auth-row label{font-size:12px; color:var(--dsg-muted); font-weight:700;}
+      .dsg-auth-row label{font-size:12px; color:rgba(231,244,255,.75); font-weight:700;}
       .dsg-auth-row input{
         -webkit-appearance:none; appearance:none;
         width:100%; padding:12px 12px; border-radius:14px;
         border:1px solid rgba(255,255,255,.12);
         background:rgba(255,255,255,.05);
-        color:var(--dsg-text);
+        color:#e7f4ff;
         outline:none;
       }
-      .dsg-auth-row input::placeholder{ color:rgba(231,244,255,.45); }
       .dsg-auth-row input:focus{ border-color:rgba(0,229,255,.45); box-shadow: 0 0 0 3px rgba(0,229,255,.14); }
-
       .dsg-auth-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
-
       .dsg-auth-btn{
         -webkit-appearance:none; appearance:none;
         flex:1; min-width:160px;
         padding:12px 12px;
         border-radius:999px;
         border:0;
-        background:linear-gradient(90deg, var(--dsg-accent1), var(--dsg-accent2));
+        background:linear-gradient(90deg, #00e5ff, #7cffb2);
         color:#032a2f;
         font-weight:1000;
         letter-spacing:.3px;
@@ -634,39 +689,15 @@
         box-shadow: 0 12px 28px rgba(0,0,0,.35);
       }
       .dsg-auth-btn:active{ transform:scale(.985); }
-
       .dsg-auth-btn.secondary{
         background:rgba(255,255,255,.07);
-        color:var(--dsg-text);
+        color:#e7f4ff;
         border:1px solid rgba(255,255,255,.14);
         box-shadow:none;
         font-weight:900;
       }
-
       .dsg-auth-link{display:inline-block; margin-top:10px; font-size:12px; color:#9ad7ff; cursor:pointer; text-decoration:underline; opacity:.95;}
       .dsg-auth-error{margin-top:10px; color:#ffb4b4; font-size:12px; min-height:16px;}
-
-      .dsg-auth-mini{
-        position:fixed; right:14px; bottom:14px; z-index:9998;
-        padding:10px 12px; border-radius:16px;
-        background:rgba(11,18,32,.92);
-        color:rgba(231,244,255,.86);
-        border:1px solid rgba(0,229,255,.22);
-        box-shadow:0 14px 40px rgba(0,0,0,.35);
-        font-size:12px; font-family: inherit;
-        display:flex; gap:10px; align-items:center;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-      }
-      .dsg-auth-mini b{ color:var(--dsg-text); font-weight:900; }
-      .dsg-auth-mini button{
-        -webkit-appearance:none; appearance:none;
-        border:0; border-radius:999px;
-        padding:7px 12px; cursor:pointer;
-        background:linear-gradient(90deg, var(--dsg-accent1), var(--dsg-accent2));
-        color:#032a2f; font-weight:1000;
-      }
-      .dsg-auth-mini button:active{ transform:scale(.98); }
 
       .dsg-auth-phonewrap{ position:relative; display:flex; gap:10px; align-items:center; width:100%; }
       .dsg-auth-phonewrap input{ flex:1; min-width:0; }
@@ -674,15 +705,14 @@
         flex:0 0 auto;
         padding:12px 14px;
         border-radius:14px;
-        border:1px solid var(--dsg-border);
+        border:1px solid rgba(0,229,255,.22);
         background:rgba(0,0,0,.28);
-        color:var(--dsg-text);
+        color:#e7f4ff;
         font-weight:900;
         letter-spacing:.2px;
         cursor:pointer;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
       }
-      .dsg-country-btn:active{ transform:scale(.98); }
       .dsg-country-menu{
         position:absolute;
         top:100%; left:0;
@@ -698,143 +728,134 @@
         backdrop-filter: blur(12px);
       }
       .dsg-auth-phonewrap.open .dsg-country-menu{ display:block; }
-      .dsg-country-item{ width:100%; text-align:left; padding:12px 14px; border:0; background:transparent; color:var(--dsg-text); font-weight:800; cursor:pointer; }
+      .dsg-country-item{ width:100%; text-align:left; padding:12px 14px; border:0; background:transparent; color:#e7f4ff; font-weight:800; cursor:pointer; }
       .dsg-country-item:hover{ background:rgba(0,229,255,.08); }
-    `;
-    document.head.appendChild(st);
-  }
 
-  function renderModal() {
-    if (document.getElementById('dsg-auth-backdrop')) return;
-
-    const backdrop = document.createElement('div');
-    backdrop.className = 'dsg-auth-backdrop';
-    backdrop.id = 'dsg-auth-backdrop';
-
-    backdrop.innerHTML = `
-      <div class="dsg-auth-modal" role="dialog" aria-modal="true">
-        <div class="dsg-auth-top">
-          <div>
-            <div class="dsg-auth-title">Login / Register</div>
-            <div class="dsg-auth-help">
-              <b>Login</b>: No Phone + 6-digit PIN (tiada OTP).
-              <br/>
-              <b>Register/Forgot PIN</b>: guna OTP untuk verify nombor.
-            </div>
-          </div>
-          <button class="dsg-auth-close" id="dsg-auth-close" aria-label="Close">×</button>
-        </div>
-
-        <div class="dsg-auth-tabs">
-          <button class="dsg-auth-tab active" id="dsg-tab-login" type="button">Login</button>
-          <button class="dsg-auth-tab" id="dsg-tab-register" type="button">Register</button>
-        </div>
-
-        <!-- LOGIN -->
-        <div id="dsg-auth-form-login">
-          <div class="dsg-auth-row">
-            <label>No Phone</label>
-            <div class="dsg-auth-phonewrap">
-              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
-              <div class="dsg-country-menu" data-country-menu>
-                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
-                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
-                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+      /* Remove blue tap highlight (mobile) */
+      * { -webkit-tap-highlight-color: transparent; }
+      a, button { -webkit-tap-highlight-color: transparent; }
+</style>
+      <div class="dsg-auth-backdrop" part="backdrop">
+        <div class="dsg-auth-modal" role="dialog" aria-modal="true">
+          <div class="dsg-auth-top">
+            <div>
+              <div class="dsg-auth-title">Login / Register</div>
+              <div class="dsg-auth-help">
+                <b>Login</b>: No Phone + 6-digit PIN (tiada OTP).<br/>
+                <b>Register/Forgot PIN</b>: guna OTP untuk verify nombor.
               </div>
-              <input id="dsg-login-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
             </div>
+            <button class="dsg-auth-close" id="dsg-auth-close" aria-label="Close">×</button>
           </div>
-          <div class="dsg-auth-row">
-            <label>6-digit PIN</label>
-            <input id="dsg-login-pin" placeholder="******" inputmode="numeric" maxlength="6" />
-          </div>
-          <div class="dsg-auth-actions">
-            <button class="dsg-auth-btn" id="dsg-btn-login" type="button">Login</button>
-            <button class="dsg-auth-btn secondary" id="dsg-btn-cancel1" type="button">Cancel</button>
-          </div>
-          <span class="dsg-auth-link" id="dsg-link-forgot">Forgot PIN? (guna OTP)</span>
-        </div>
 
-        <!-- REGISTER -->
-        <div id="dsg-auth-form-register" style="display:none">
-          <div class="dsg-auth-row">
-            <label>No Phone</label>
-            <div class="dsg-auth-phonewrap">
-              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
-              <div class="dsg-country-menu" data-country-menu>
-                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
-                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
-                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+          <div class="dsg-auth-tabs">
+            <button class="dsg-auth-tab active" id="dsg-tab-login" type="button">Login</button>
+            <button class="dsg-auth-tab" id="dsg-tab-register" type="button">Register</button>
+          </div>
+
+          <div id="dsg-auth-form-login">
+            <div class="dsg-auth-row">
+              <label>No Phone</label>
+              <div class="dsg-auth-phonewrap">
+                <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+                <div class="dsg-country-menu" data-country-menu>
+                  <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                  <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                  <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+                </div>
+                <input id="dsg-login-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
               </div>
-              <input id="dsg-reg-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
             </div>
+            <div class="dsg-auth-row">
+              <label>6-digit PIN</label>
+              <input id="dsg-login-pin" placeholder="******" inputmode="numeric" maxlength="6" />
+            </div>
+            <div class="dsg-auth-actions">
+              <button class="dsg-auth-btn" id="dsg-btn-login" type="button">Login</button>
+              <button class="dsg-auth-btn secondary" id="dsg-btn-cancel1" type="button">Cancel</button>
+            </div>
+            <span class="dsg-auth-link" id="dsg-link-forgot">Forgot PIN? (guna OTP)</span>
           </div>
 
-          <div class="dsg-auth-row" id="dsg-reg-otp-row" style="display:none">
-            <label>OTP (6 digit)</label>
-            <input id="dsg-reg-otp" placeholder="123456" inputmode="numeric" maxlength="6" />
-          </div>
-
-          <div class="dsg-auth-row">
-            <label>Set 6-digit PIN</label>
-            <input id="dsg-reg-pin" placeholder="******" inputmode="numeric" maxlength="6" />
-          </div>
-          <div class="dsg-auth-row">
-            <label>Confirm PIN</label>
-            <input id="dsg-reg-pin2" placeholder="******" inputmode="numeric" maxlength="6" />
-          </div>
-
-          <div class="dsg-auth-actions">
-            <button class="dsg-auth-btn secondary" id="dsg-btn-reg-sendotp" type="button">Send OTP</button>
-            <button class="dsg-auth-btn" id="dsg-btn-register" type="button">Verify OTP & Create</button>
-            <button class="dsg-auth-btn secondary" id="dsg-btn-cancel2" type="button">Cancel</button>
-          </div>
-        </div>
-
-        <!-- FORGOT PIN -->
-        <div id="dsg-auth-form-forgot" style="display:none">
-          <div class="dsg-auth-row">
-            <label>No Phone</label>
-            <div class="dsg-auth-phonewrap">
-              <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
-              <div class="dsg-country-menu" data-country-menu>
-                <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
-                <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
-                <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+          <div id="dsg-auth-form-register" style="display:none">
+            <div class="dsg-auth-row">
+              <label>No Phone</label>
+              <div class="dsg-auth-phonewrap">
+                <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+                <div class="dsg-country-menu" data-country-menu>
+                  <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                  <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                  <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+                </div>
+                <input id="dsg-reg-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
               </div>
-              <input id="dsg-forgot-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+            </div>
+
+            <div class="dsg-auth-row" id="dsg-reg-otp-row" style="display:none">
+              <label>OTP (6 digit)</label>
+              <input id="dsg-reg-otp" placeholder="123456" inputmode="numeric" maxlength="6" />
+            </div>
+
+            <div class="dsg-auth-row">
+              <label>Set 6-digit PIN</label>
+              <input id="dsg-reg-pin" placeholder="******" inputmode="numeric" maxlength="6" />
+            </div>
+            <div class="dsg-auth-row">
+              <label>Confirm PIN</label>
+              <input id="dsg-reg-pin2" placeholder="******" inputmode="numeric" maxlength="6" />
+            </div>
+
+            <div class="dsg-auth-actions">
+              <button class="dsg-auth-btn secondary" id="dsg-btn-reg-sendotp" type="button">Send OTP</button>
+              <button class="dsg-auth-btn" id="dsg-btn-register" type="button">Verify OTP & Create</button>
+              <button class="dsg-auth-btn secondary" id="dsg-btn-cancel2" type="button">Cancel</button>
             </div>
           </div>
 
-          <div class="dsg-auth-row" id="dsg-forgot-otp-row" style="display:none">
-            <label>OTP (6 digit)</label>
-            <input id="dsg-forgot-otp" placeholder="123456" inputmode="numeric" maxlength="6" />
+          <div id="dsg-auth-form-forgot" style="display:none">
+            <div class="dsg-auth-row">
+              <label>No Phone</label>
+              <div class="dsg-auth-phonewrap">
+                <button class="dsg-country-btn" type="button" data-country-btn>🇲🇾 +60</button>
+                <div class="dsg-country-menu" data-country-menu>
+                  <button type="button" class="dsg-country-item" data-country="MY">🇲🇾 Malaysia (+60)</button>
+                  <button type="button" class="dsg-country-item" data-country="SG">🇸🇬 Singapore (+65)</button>
+                  <button type="button" class="dsg-country-item" data-country="ID">🇮🇩 Indonesia (+62)</button>
+                </div>
+                <input id="dsg-forgot-phone" placeholder="contoh: 6011xxxxxxx / 01xxxxxxxx" inputmode="tel" />
+              </div>
+            </div>
+
+            <div class="dsg-auth-row" id="dsg-forgot-otp-row" style="display:none">
+              <label>OTP (6 digit)</label>
+              <input id="dsg-forgot-otp" placeholder="123456" inputmode="numeric" maxlength="6" />
+            </div>
+
+            <div class="dsg-auth-row">
+              <label>New 6-digit PIN</label>
+              <input id="dsg-forgot-pin" placeholder="******" inputmode="numeric" maxlength="6" />
+            </div>
+            <div class="dsg-auth-row">
+              <label>Confirm New PIN</label>
+              <input id="dsg-forgot-pin2" placeholder="******" inputmode="numeric" maxlength="6" />
+            </div>
+
+            <div class="dsg-auth-actions">
+              <button class="dsg-auth-btn secondary" id="dsg-btn-forgot-sendotp" type="button">Send OTP</button>
+              <button class="dsg-auth-btn" id="dsg-btn-forgot-reset" type="button">Verify OTP & Reset PIN</button>
+              <button class="dsg-auth-btn secondary" id="dsg-btn-forgot-back" type="button">Back</button>
+            </div>
           </div>
 
-          <div class="dsg-auth-row">
-            <label>New 6-digit PIN</label>
-            <input id="dsg-forgot-pin" placeholder="******" inputmode="numeric" maxlength="6" />
-          </div>
-          <div class="dsg-auth-row">
-            <label>Confirm New PIN</label>
-            <input id="dsg-forgot-pin2" placeholder="******" inputmode="numeric" maxlength="6" />
-          </div>
-
-          <div class="dsg-auth-actions">
-            <button class="dsg-auth-btn secondary" id="dsg-btn-forgot-sendotp" type="button">Send OTP</button>
-            <button class="dsg-auth-btn" id="dsg-btn-forgot-reset" type="button">Verify OTP & Reset PIN</button>
-            <button class="dsg-auth-btn secondary" id="dsg-btn-forgot-back" type="button">Back</button>
-          </div>
+          <div class="dsg-auth-error" id="dsg-auth-error"></div>
         </div>
-
-        <div class="dsg-auth-error" id="dsg-auth-error"></div>
       </div>
     `;
 
-    document.body.appendChild(backdrop);
+    const backdrop = shadow.querySelector('.dsg-auth-backdrop');
     initCountryPicker(backdrop);
 
-    const $ = (id) => document.getElementById(id);
+    const $ = (id) => shadow.getElementById(id);
 
     function setError(msg) {
       const el = $('dsg-auth-error');
@@ -842,14 +863,13 @@
     }
 
     function close() {
-      backdrop.style.display = 'none';
+      host.style.display = 'none';
       setError('');
     }
 
     function showLogin() {
       $('dsg-tab-login')?.classList.add('active');
       $('dsg-tab-register')?.classList.remove('active');
-
       $('dsg-auth-form-login').style.display = '';
       $('dsg-auth-form-register').style.display = 'none';
       $('dsg-auth-form-forgot').style.display = 'none';
@@ -859,11 +879,9 @@
     function showRegister() {
       $('dsg-tab-register')?.classList.add('active');
       $('dsg-tab-login')?.classList.remove('active');
-
       $('dsg-auth-form-register').style.display = '';
       $('dsg-auth-form-login').style.display = 'none';
       $('dsg-auth-form-forgot').style.display = 'none';
-
       $('dsg-reg-otp-row').style.display = 'none';
       $('dsg-reg-otp').value = '';
       setError('');
@@ -873,7 +891,6 @@
       $('dsg-auth-form-forgot').style.display = '';
       $('dsg-auth-form-login').style.display = 'none';
       $('dsg-auth-form-register').style.display = 'none';
-
       $('dsg-forgot-otp-row').style.display = 'none';
       $('dsg-forgot-otp').value = '';
       setError('');
@@ -889,7 +906,7 @@
     $('dsg-link-forgot')?.addEventListener('click', showForgot);
     $('dsg-btn-forgot-back')?.addEventListener('click', showLogin);
 
-    // ===== LOGIN (NO OTP) =====
+    // ===== LOGIN =====
     $('dsg-btn-login')?.addEventListener('click', async () => {
       const phone = normalizePhone($('dsg-login-phone').value);
       const pin = String($('dsg-login-pin').value || '').trim();
@@ -898,15 +915,11 @@
       if (!isValidPin(pin)) return setError('PIN mesti 6 digit nombor.');
 
       let u = getUser(phone);
-
-      // Firestore fallback (jika local tiada)
       if (!u && fsEnabled()) {
         try {
           const fu = await fsGetUser(phone);
           if (fu) u = fu;
-        } catch (e) {
-          console.warn('[DSG Firestore] login read failed', e);
-        }
+        } catch {}
       }
 
       if (!u) return setError('Nombor ini belum register. Pergi tab Register.');
@@ -942,9 +955,7 @@
       const pin2 = String($('dsg-reg-pin2').value || '').trim();
 
       if (!phone) return setError('Sila isi No Phone.');
-
-      const exists = getUser(phone);
-      if (exists) return setError('Nombor ini dah ada. Pergi tab Login.');
+      if (getUser(phone)) return setError('Nombor ini dah ada. Pergi tab Login.');
 
       $('dsg-reg-otp-row').style.display = '';
       if (!otp) return setError('Sila isi OTP. (Tekan Send OTP dulu kalau belum)');
@@ -954,11 +965,12 @@
       if (!isValidPin(pin)) return setError('PIN mesti 6 digit nombor.');
       if (pin !== pin2) return setError('Confirm PIN tak sama.');
 
+      const now = new Date().toISOString();
       setUser(phone, {
         phone: normalizePhone(phone),
         pin,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       });
       ensureWallet(phone);
 
@@ -966,8 +978,8 @@
         fsSetUser(phone, {
           phone: normalizePhone(phone),
           pin,
-          createdAt: fsServerTimestamp() || new Date().toISOString(),
-          updatedAt: fsServerTimestamp() || new Date().toISOString(),
+          createdAt: fsServerTimestamp() || now,
+          updatedAt: fsServerTimestamp() || now,
         }).catch(() => {});
         fsEnsureWallet(phone).catch(() => {});
       }
@@ -977,7 +989,7 @@
       close();
     });
 
-    // ===== FORGOT PIN: Send OTP =====
+    // ===== FORGOT: Send OTP =====
     $('dsg-btn-forgot-sendotp')?.addEventListener('click', () => {
       const phone = normalizePhone($('dsg-forgot-phone').value);
       if (!phone) return setError('Sila isi No Phone.');
@@ -992,7 +1004,7 @@
       setError('✅ OTP dihantar. Sila masukkan OTP.');
     });
 
-    // ===== FORGOT PIN: Verify OTP & Reset PIN =====
+    // ===== FORGOT: Verify OTP & Reset =====
     $('dsg-btn-forgot-reset')?.addEventListener('click', () => {
       const phone = normalizePhone($('dsg-forgot-phone').value);
       const otp = String($('dsg-forgot-otp').value || '').trim();
@@ -1012,158 +1024,130 @@
       if (!isValidPin(pin)) return setError('PIN mesti 6 digit nombor.');
       if (pin !== pin2) return setError('Confirm PIN tak sama.');
 
-      setUser(phone, { ...u, phone: normalizePhone(phone), pin, updatedAt: new Date().toISOString() });
+      const now = new Date().toISOString();
+      setUser(phone, { ...u, phone: normalizePhone(phone), pin, updatedAt: now });
 
       if (fsEnabled()) {
         fsSetUser(phone, {
           ...u,
           phone: normalizePhone(phone),
           pin,
-          updatedAt: fsServerTimestamp() || new Date().toISOString(),
+          updatedAt: fsServerTimestamp() || now,
         }).catch(() => {});
       }
 
       clearOtp(phone, 'forgot');
-
-      ensureWallet(phone);
       setSession(phone);
       close();
     });
+
+    // close on backdrop click
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) close();
+    });
+
+    // expose internal helpers
+    renderModal.__close = close;
+    renderModal.__showLogin = showLogin;
+    renderModal.__showRegister = showRegister;
   }
 
-  function openModal({ forceRegister = false } = {}) {
-    try {
-      injectStyles();
-      renderModal();
-      const backdrop = document.getElementById('dsg-auth-backdrop');
-      if (!backdrop) throw new Error('Auth modal backdrop missing (renderModal failed).');
 
-      backdrop.style.display = 'flex';
 
-      if (forceRegister) {
-        document.getElementById('dsg-tab-register')?.click();
-      } else {
-        document.getElementById('dsg-tab-login')?.click();
-      }
-    } catch (err) {
-      console.error('[DSGAuth] openModal failed', err);
-      try {
-        alert('Auth modal error. Sila buka Console untuk detail.');
-      } catch {}
+  function openModal(opts) {
+    injectStyles();
+    renderModal();
+
+    const backdrop = document.getElementById('dsg-auth-backdrop');
+    if (!backdrop) return;
+
+    backdrop.style.display = 'block';
+
+    // default view
+    if (opts && opts.forceRegister) {
+      renderModal.__showRegister?.();
+    } else {
+      renderModal.__showLogin?.();
     }
   }
 
-  function ensureMiniChip() {
+  // ===== Drag Dock (bottom-right, half hidden) =====
+    // ===== Floating Button (consistent across all pages) =====
+  function ensureAuthFab() {
     injectStyles();
-    if (document.getElementById('dsg-auth-mini')) return;
 
-    const chip = document.createElement('div');
-    chip.id = 'dsg-auth-mini';
-    chip.className = 'dsg-auth-mini';
-    document.body.appendChild(chip);
+    if (document.getElementById('dsg-auth-fab')) return;
+
+    const fab = document.createElement('button');
+    fab.id = 'dsg-auth-fab';
+    fab.className = 'dsg-auth-fab';
+    fab.type = 'button';
+    fab.setAttribute('aria-label', 'Login / Account');
+    fab.setAttribute('title', 'Login / Account');
+    document.body.appendChild(fab);
 
     function render() {
       const s = getSession();
-      if (!s?.phone) {
-        chip.innerHTML = 'Not logged in <button type="button" id="dsg-mini-login">Login</button>';
-        chip.querySelector('#dsg-mini-login')?.addEventListener('click', () => openModal({}));
-      } else {
-        chip.innerHTML = `Logged: <b>${s.phone}</b> <button type="button" id="dsg-mini-logout">Logout</button>`;
-        chip.querySelector('#dsg-mini-logout')?.addEventListener('click', logout);
-      }
+      const isIn = !!s?.phone;
+      fab.innerHTML = `<div class="ico">${isIn ? '✅' : '🔒'}</div>`;
+      fab.setAttribute('aria-label', isIn ? 'Account' : 'Login');
     }
 
-    render();
-    window.addEventListener('dsg:auth-changed', render);
-  }
-
-  // ===== Optional prompt (once per tab) =====
-  function promptLoginIfLoggedOutOncePerTab() {
-    const s = getSession();
-    if (s?.phone) return; // dah login
-
-    if (window.DSG_AUTH_ALWAYS_PROMPT !== true) {
-      const key = 'DSG_AUTH_PROMPTED';
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, '1');
-    }
-
-    const ok = window.confirm('Anda belum login. Nak login sekarang?');
-    if (ok) {
+    fab.addEventListener('click', (e) => {
+      e.preventDefault();
       openModal({});
-    } else {
-      window.dispatchEvent(new CustomEvent('dsg:auth-required', { detail: { reason: 'not_logged_in' } }));
-    }
+    });
+
+    // Right click / long press => logout (if logged in)
+    fab.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const s = getSession();
+      if (s?.phone) logout();
+    });
+
+    window.addEventListener('dsg:auth-changed', render);
+    render();
   }
 
-  // ===== Global click handler (NO ID binding to avoid duplicate with dashboard.js) =====
-  // Use these anywhere:
-  //   data-dsg-open-auth        -> open Login
-  //   data-dsg-open-register    -> open Register
-  function bindGlobalAuthButtons() {
-    if (bindGlobalAuthButtons.__bound) return;
-    bindGlobalAuthButtons.__bound = true;
+// ===== Auto popup (custom modal) =====
+  function autoPopupIfNotLoggedIn() {
+    if (window.DSG_AUTH_AUTOPOPUP === false) return;
+    const s = getSession();
+    if (s?.phone) return;
 
-    document.addEventListener(
-      'click',
-      (e) => {
-        const openLogin = e.target.closest('[data-dsg-open-auth], .dsg-open-auth');
-        if (openLogin) {
-          e.preventDefault();
-          openModal({});
-          return;
-        }
-        const openReg = e.target.closest('[data-dsg-open-register], .dsg-open-register');
-        if (openReg) {
-          e.preventDefault();
-          openModal({ forceRegister: true });
-          return;
-        }
-      },
-      { passive: false }
-    );
+    try {
+      if (sessionStorage.getItem(SS_AUTOPOP) === '1') return;
+      sessionStorage.setItem(SS_AUTOPOP, '1');
+    } catch {}
+
+    // small delay so DOM ready
+    setTimeout(() => openModal({}), 250);
   }
-
-  // ===== Expose API =====
-  window.DSGAuth = {
-    getSession,
-    openModal,
-    logout,
-    touchSession,
-    SESSION_TTL_DAYS,
-
-    normalizePhone,
-    getCountry,
-    setCountry,
-
-    wallet: {
-      ensureWallet,
-      getBalance: walletGet,
-      setBalance: walletSet,
-      addBalance: walletAdd,
-      deductBalance: walletDeduct,
-    },
-
-    otp: {
-      sendOtp,
-      verifyOtp,
-      isOtpVerified,
-    },
-  };
 
   // ===== Init =====
-  document.addEventListener('DOMContentLoaded', () => {
-    bindGlobalAuthButtons();
+  function init() {
     startSessionActivityListeners();
+    ensureAuthFab();
+    autoPopupIfNotLoggedIn();
+  }
 
-    // Mini chip bawah boleh mengganggu UI (default OFF)
-    if (window.DSG_AUTH_SHOW_MINICHIP) ensureMiniChip();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
-    // Optional: prompt login once/tab (default ON)
-    if (window.DSG_AUTH_PROMPT_ON_LOAD !== false) {
-      promptLoginIfLoggedOutOncePerTab();
-    }
-
-    console.log('[DSGAuth] ready', typeof window.DSGAuth);
-  });
+  // ===== Public API =====
+  window.DSGAuth = {
+    normalizePhone,
+    openModal,
+    getSession,
+    logout,
+    wallet: {
+      getBalance: walletGet,
+      setBalance: walletSet,
+      add: walletAdd,
+      deduct: walletDeduct,
+    },
+  };
 })();

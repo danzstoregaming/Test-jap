@@ -181,6 +181,23 @@ h2{margin:0 0 10px;font-family:'Orbitron',sans-serif;font-size:1.05rem}
   font-weight:900;background:linear-gradient(90deg,var(--accent),var(--good));color:#032a2f;
   box-shadow:0 8px 20px rgba(0,229,255,.25);
 }
+.btn{
+  transition: all .18s ease;
+}
+
+.btn:active{
+  transform: scale(.96);
+}
+
+.btn.saving{
+  opacity:.7;
+  pointer-events:none;
+}
+
+.btn.saved{
+  background:linear-gradient(90deg,#00ffa3,#00e5ff);
+  box-shadow:0 0 18px rgba(0,255,163,.6);
+}
 .btn.small{padding:9px 12px;font-size:.92rem}
 .btn.ghost{background:transparent;border:1px solid rgba(0,229,255,.35);color:var(--text);box-shadow:none}
 .btn.danger{background:transparent;border:1px solid rgba(255,45,85,.5);color:#ffd1dc;box-shadow:none}

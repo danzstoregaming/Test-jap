@@ -262,11 +262,17 @@ async function saveProfile(){
   const phone = sessionPhone();
   if (!phone) return;
 
-  // strict rule: cannot save if no changes
   if (!hasChanges()){
     setSaveEnabled(false);
     if (els.note) els.note.textContent = "Tiada perubahan untuk disimpan.";
     return;
+  }
+
+  const btn = els.saveBtn;
+  if (btn){
+    btn.classList.add("saving");
+    btn.textContent = "Saving...";
+    btn.disabled = true;
   }
 
   const payload = {
@@ -274,64 +280,64 @@ async function saveProfile(){
     email: String(els.emailEl?.value || "").trim(),
   };
 
-  // local backup immediately
+  const now = nowISO();
+
+  // ===== LOCAL UPDATE =====
+  let old = {};
   try{
-    const old = getUserLocal(phone) || {};
+    old = getUserLocal(phone) || {};
     const merged = {
       ...old,
       ...payload,
       phone,
-      updatedAt: nowISO(),
-      createdAt: old.createdAt || nowISO(),
+      createdAt: old.createdAt || now, // NEVER overwrite
+      updatedAt: now
     };
     localStorage.setItem("DSG_USER_" + phone, JSON.stringify(merged));
   }catch{}
 
-  // Firestore primary (do NOT overwrite createdAt)
+  // update UI instantly
+  if (els.updatedEl) els.updatedEl.value = new Date(now).toLocaleString();
+
+  // ===== FIRESTORE =====
   if (fsEnabled()){
     try{
       const db = fsDb();
       const ref = db.collection("users").doc(phone);
 
-      // only set createdAt if missing (first time)
       const snap = await ref.get();
-      const needCreated = !snap.exists || !(snap.data() || {}).createdAt;
+      const data = snap.exists ? snap.data() : {};
 
-      const data = {
+      await ref.set({
         ...payload,
         phone,
-        updatedAt: fsTs() || nowISO(),
-      };
-      if (needCreated){
-        data.createdAt = fsTs() || nowISO();
-      }
+        updatedAt: fsTs() || now,
+        ...(data.createdAt ? {} : { createdAt: fsTs() || now })
+      }, { merge:true });
 
-      await ref.set(data, { merge:true });
+      if (els.note) els.note.textContent = "✅ Saved successfully.";
 
-      if (els.note) els.note.textContent = "✅ Saved.";
-      // baseline updated -> disable button
       setBaseline(payload.name, payload.email);
       setSaveEnabled(false);
-      // refresh timestamps
-      renderAccount();
-      return;
     }catch(e){
-      console.warn("[account] Firestore save failed, queue local", e);
+      console.warn("[account] Firestore save failed", e);
+      if (els.note) els.note.textContent = "⚠️ Saved locally (offline mode).";
     }
   }
 
-  // fallback pending queue
-  const pending = loadPendingUser();
-  pending.unshift({ phone, payload, queuedAt: nowISO() });
-  savePendingUser(pending.slice(0,200));
+  // ===== Button success effect =====
+  if (btn){
+    btn.classList.remove("saving");
+    btn.classList.add("saved");
+    btn.textContent = "Saved ✓";
 
-  if (els.note) els.note.textContent = "⚠️ Firestore gagal — disimpan local (pending sync).";
-  setBaseline(payload.name, payload.email);
-  setSaveEnabled(false);
+    setTimeout(()=>{
+      btn.classList.remove("saved");
+      btn.textContent = "Save";
+      updateSaveState();
+    }, 1200);
+  }
 }
-
-const btnAccSave = document.getElementById("btn-acc-save");
-if (btnAccSave) btnAccSave.addEventListener("click", ()=> saveProfile());
 
 
 // ===== WALLET (Firestore-first, fallback local) =====

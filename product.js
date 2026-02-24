@@ -2078,10 +2078,10 @@ const VOUCHERS = {
     discount: 0.10
   },
 
-  "DANZ5": {
-    text: "✅ Valid – RM5 OFF",
+  "DANZ2": {
+    text: "✅ Valid – RM2 OFF",
     class: "valid",
-    amount: 5
+    amount: 2
   },
 
   
